@@ -21,20 +21,38 @@
         #time-display {
             margin-bottom: 5px;
         }
-        .time-dropdown {
+        #nav-buttons {
+            display: flex;
+            justify-content: space-between;
             margin-top: 5px;
+        }
+        .nav-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .nav-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div id="controls">
         <div id="time-display">Loading...</div>
-        <select id="time-dropdown" class="time-dropdown"></select>
+        <div id="nav-buttons">
+            <button id="prev-button" class="nav-button">&lt;</button>
+            <button id="next-button" class="nav-button">&gt;</button>
+        </div>
     </div>
     <div id="map"></div>
     <script>
         let map;
-        let currentLayer;
+        let currentIndex = 0;
+        let validtimes = [];
 
         function updateRadarLayer(basetime, validtime) {
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
@@ -80,25 +98,42 @@
             });
 
             document.getElementById('time-display').innerText = `レーダー画像時刻: ${validtime}`;
+            updateNavButtons();
         }
+
+        function updateNavButtons() {
+            document.getElementById('prev-button').disabled = currentIndex === 0;
+            document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1;
+        }
+
+        document.getElementById('prev-button').onclick = () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
+            }
+        };
+
+        document.getElementById('next-button').onclick = () => {
+            if (currentIndex < validtimes.length - 1) {
+                currentIndex++;
+                updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
+            }
+        };
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
-                const basetime = data[0].basetime;
                 const now = new Date();
-
-                // 過去のデータをフィルタリングする
-                const validtimes = data
-                    .map(item => item.validtime)
-                    .filter(validtime => {
+                validtimes = data
+                    .map(item => ({ basetime: item.basetime, validtime: item.validtime }))
+                    .filter(item => {
                         const validDate = new Date(
-                            validtime.slice(0, 4),
-                            validtime.slice(4, 6) - 1,
-                            validtime.slice(6, 8),
-                            validtime.slice(8, 10),
-                            validtime.slice(10, 12),
-                            validtime.slice(12, 14)
+                            item.validtime.slice(0, 4),
+                            item.validtime.slice(4, 6) - 1,
+                            item.validtime.slice(6, 8),
+                            item.validtime.slice(8, 10),
+                            item.validtime.slice(10, 12),
+                            item.validtime.slice(12, 14)
                         );
                         return validDate <= now;
                     });
@@ -139,22 +174,8 @@
 
                 map.on('load', function () {
                     // 最初のレーダー画像を表示
-                    updateRadarLayer(basetime, validtimes[0]);
+                    updateRadarLayer(validtimes[0].basetime, validtimes[0].validtime);
                 });
-
-                // プルダウンメニューを作成して時間ごとに切り替え
-                const timeDropdown = document.getElementById('time-dropdown');
-                validtimes.forEach(validtime => {
-                    const option = document.createElement('option');
-                    option.value = validtime;
-                    option.innerText = validtime;
-                    timeDropdown.appendChild(option);
-                });
-
-                timeDropdown.onchange = () => {
-                    const selectedTime = timeDropdown.value;
-                    updateRadarLayer(basetime, selectedTime);
-                };
             })
             .catch(error => console.error('Error loading JSON:', error));
     </script>
