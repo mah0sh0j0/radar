@@ -69,11 +69,16 @@
             z-index: 10;
             white-space: pre-line; /* 改行を反映 */
         }
+        #slider {
+            width: 100%;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div id="controls">
         <div id="time-display">Loading...</div>
+        <input type="range" id="slider" min="0" max="36" step="1" value="36">
         <div id="nav-buttons">
             <button id="prev-button" class="nav-button">&lt;</button>
             <button id="next-button" class="nav-button">&gt;</button>
@@ -85,10 +90,11 @@
     <div id="centerLatLngDisplay"></div>
     <script>
         let map;
-        let currentIndex = 0;
+        let currentIndex = 36; // 最新のデータは36
         let validtimes = [];
         let currentLayer = null;
-        let pastOffset = 0; // 過去に遡る際のオフセット（5分刻み）
+        let maxOffset = 36; // 最大で36（3時間前）まで
+        let slider = document.getElementById('slider');
 
         function updateRadarLayer(basetime, validtime) {
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
@@ -144,7 +150,6 @@
                 mask: newMaskLayerId
             };
 
-            // validtime を JST に変換して表示
             const validDateUTC = new Date(
                 parseInt(validtime.slice(0, 4)),
                 parseInt(validtime.slice(4, 6)) - 1,
@@ -156,37 +161,39 @@
             const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
 
             document.getElementById('time-display').innerText = formattedDate;
-            updateNavButtons();
         }
 
         function updateNavButtons() {
-            const isAtFirstData = currentIndex === 0 && pastOffset === 0;
-            const isAtLastData = currentIndex === validtimes.length - 1 && pastOffset === 0;
-
-            document.getElementById('prev-button').disabled = isAtFirstData;
-            document.getElementById('next-button').disabled = isAtLastData && pastOffset === 0;
+            document.getElementById('prev-button').disabled = currentIndex === 0;
+            document.getElementById('next-button').disabled = currentIndex === maxOffset;
         }
 
+        function updateSlider() {
+            const pastTime = calculatePastTime(validtimes[validtimes.length - 1].basetime, validtimes[validtimes.length - 1].validtime, maxOffset - currentIndex);
+            updateRadarLayer(pastTime.basetime, pastTime.validtime);
+        }
+
+        slider.oninput = function() {
+            currentIndex = parseInt(slider.value);
+            updateSlider();
+            updateNavButtons();
+        };
+
         document.getElementById('prev-button').onclick = () => {
-            if (pastOffset < 12) {
-                pastOffset++;
-                const pastTime = calculatePastTime(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime, pastOffset);
-                updateRadarLayer(pastTime.basetime, pastTime.validtime);
-            } else if (currentIndex > 0) {
+            if (currentIndex > 0) {
                 currentIndex--;
-                pastOffset = 0; // リセット
-                updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
+                slider.value = currentIndex;
+                updateSlider();
+                updateNavButtons();
             }
         };
 
         document.getElementById('next-button').onclick = () => {
-            if (pastOffset > 0) {
-                pastOffset--;
-                const futureTime = calculateFutureTime(validtimes[currentIndex].basetime, pastOffset);
-                updateRadarLayer(validtimes[currentIndex].basetime, futureTime.validtime);
-            } else if (currentIndex < validtimes.length - 1 || pastOffset > 0) {
+            if (currentIndex < maxOffset) {
                 currentIndex++;
-                updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
+                slider.value = currentIndex;
+                updateSlider();
+                updateNavButtons();
             }
         };
 
@@ -212,27 +219,6 @@
             return { basetime: pastBaseTime, validtime: pastValidTime };
         }
 
-        function calculateFutureTime(basetime, offset) {
-            const date = new Date(
-                parseInt(basetime.slice(0, 4)),
-                parseInt(basetime.slice(4, 6)) - 1,
-                parseInt(basetime.slice(6, 8)),
-                parseInt(basetime.slice(8, 10)),
-                parseInt(basetime.slice(10, 12))
-            );
-            date.setMinutes(date.getMinutes() + offset * 5);
-
-            const year = date.getFullYear().toString().padStart(4, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-
-            const futureValidTime = `${year}${month}${day}${hours}${minutes}00`;
-
-            return { basetime: basetime, validtime: futureValidTime };
-        }
-
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
@@ -246,8 +232,9 @@
                     return;
                 }
 
-                currentIndex = validtimes.length - 1; // 最新のデータを表示する
-                pastOffset = 0;
+                currentIndex = maxOffset; // 最新のデータを表示する
+                updateSlider();
+                updateNavButtons();
 
                 map = new maplibregl.Map({
                     container: 'map',
@@ -278,7 +265,7 @@
                 });
 
                 map.on('load', function () {
-                    updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
+                    updateRadarLayer(validtimes[validtimes.length - 1].basetime, validtimes[validtimes.length - 1].validtime);
 
                     map.on('move', function () {
                         const center = map.getCenter();
