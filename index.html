@@ -119,7 +119,6 @@
     <div id="nav-bar">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="play-button" class="nav-button">▶︎</button>
             <button id="prev-button" class="nav-button">&lt;</button>
             <input type="range" id="slider" min="0" max="36" step="1" value="36">
             <button id="next-button" class="nav-button">&gt;</button>
@@ -139,8 +138,6 @@
         let maxOffset = 36; // 最大で36（3時間前）まで
         let slider = document.getElementById('slider');
         let visibility = true;
-        let isPlaying = false; // 自動再生の状態
-        let playInterval = null; // 自動再生のインターバル
 
         function updateRadarLayer(basetime, validtime) {
             if (!map) return;
@@ -264,27 +261,6 @@
             document.getElementById('centerLatLngDisplay').style.display = visibility ? 'block' : 'none';
         };
 
-        document.getElementById('play-button').onclick = () => {
-            if (isPlaying) {
-                clearInterval(playInterval);
-                isPlaying = false;
-                document.getElementById('play-button').innerText = '▶︎';
-            } else {
-                isPlaying = true;
-                document.getElementById('play-button').innerText = '⏸';
-                playInterval = setInterval(() => {
-                    if (currentIndex < maxOffset) {
-                        currentIndex++;
-                    } else {
-                        currentIndex = 0; // ループ再生するためにインデックスをリセット
-                    }
-                    slider.value = currentIndex;
-                    updateSlider();
-                    updateNavButtons();
-                }, 500);
-            }
-        };
-
         function calculatePastTime(basetime, validtime, offset) {
             const date = new Date(
                 parseInt(basetime.slice(0, 4)),
@@ -327,12 +303,7 @@
         }
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 validtimes = data.map(item => ({
                     basetime: item.basetime,
@@ -394,10 +365,7 @@
                         `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
                 });
             })
-            .catch(error => {
-                console.error('Error loading JSON:', error);
-                document.getElementById('time-display').innerText = 'データの取得に失敗しました';
-            });
+            .catch(error => console.error('Error loading JSON:', error));
     </script>
 </body>
 </html>
