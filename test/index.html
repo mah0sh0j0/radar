@@ -236,17 +236,18 @@
 function updateRadarLayer(basetime, validtime) {
     if (!map) return;
 
-    // 現在時刻を取得
+    // 現在のUTC時刻を取得
     const now = new Date();
 
-    // 5分単位で最も近い過去のUTC時刻を計算
+    // 5分刻みの直近の過去時刻を取得
     const roundedMinutes = Math.floor(now.getUTCMinutes() / 5) * 5;
     const roundedTime = new Date(Date.UTC(
         now.getUTCFullYear(),
         now.getUTCMonth(),
         now.getUTCDate(),
         now.getUTCHours(),
-        roundedMinutes
+        roundedMinutes,
+        0 // 秒とミリ秒をゼロに
     ));
 
     // validtimeを新たに設定
@@ -301,10 +302,13 @@ function updateRadarLayer(basetime, validtime) {
         currentLayers = [newRadarLayerId];
     });
 
-    const formattedDate = `${roundedTime.getUTCFullYear()}年${(roundedTime.getUTCMonth() + 1).toString().padStart(2, '0')}月${roundedTime.getUTCDate().toString().padStart(2, '0')}日${roundedTime.getUTCHours().toString().padStart(2, '0')}時${roundedTime.getUTCMinutes().toString().padStart(2, '0')}分`;
+    // 表示用の時刻をUTCからJSTに変換して表示
+    const roundedTimeJST = new Date(roundedTime.getTime() + 9 * 60 * 60 * 1000);
+    const formattedDate = `${roundedTimeJST.getFullYear()}年${(roundedTimeJST.getMonth() + 1).toString().padStart(2, '0')}月${roundedTimeJST.getDate().toString().padStart(2, '0')}日${roundedTimeJST.getHours().toString().padStart(2, '0')}時${roundedTimeJST.getMinutes().toString().padStart(2, '0')}分`;
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
         function updateNavButtons() {
             document.getElementById('prev-button').disabled = currentIndex === 0;
