@@ -236,11 +236,11 @@
 function updateRadarLayer(basetime, validtime) {
     if (!map) return;
 
-    // 現在時刻を取得
+    // 現在のUTC時刻を取得
     const now = new Date();
 
     // validtimeをUTCとして解析
-    const validDateUTC = new Date(
+    let validDateUTC = new Date(
         parseInt(validtime.slice(0, 4)),
         parseInt(validtime.slice(4, 6)) - 1,
         parseInt(validtime.slice(6, 8)),
@@ -248,18 +248,19 @@ function updateRadarLayer(basetime, validtime) {
         parseInt(validtime.slice(10, 12))
     );
 
-    // 現在時刻が有効時刻を1分以上経過していない場合、1つ前の時刻にする
+    // 現在時刻が有効時刻を1分以上経過していない場合、5分前のデータを使用
     if (now.getTime() < validDateUTC.getTime() + 60000) {
-        // 5分前のデータにシフト
         validDateUTC.setMinutes(validDateUTC.getMinutes() - 5);
         validtime = `${validDateUTC.getUTCFullYear()}${(validDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}${validDateUTC.getUTCDate().toString().padStart(2, '0')}${validDateUTC.getUTCHours().toString().padStart(2, '0')}${validDateUTC.getUTCMinutes().toString().padStart(2, '0')}00`;
     }
 
+    // タイルURLを生成
     const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
+    // 新しいレイヤーIDを生成
     const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-    // 新しいレイヤーを追加するが、初期状態では非表示
+    // 新しいレイヤーを追加
     map.addSource(newRadarLayerId, {
         type: 'raster',
         tiles: [tileUrl],
@@ -272,16 +273,15 @@ function updateRadarLayer(basetime, validtime) {
         type: 'raster',
         source: newRadarLayerId,
         paint: {
-            'raster-opacity': 0 // 初期の透明度を0に設定
+            'raster-opacity': 0
         }
-    }, 'jma-mask-layer'); // レイヤーの順序を指定：'jma-mask-layer'の下に追加
+    }, 'jma-mask-layer');
 
     // レイヤーのロードが完了したらフェードイン
     map.once('idle', () => {
-        // 古いレイヤーを少し遅らせてフェードアウト
         currentLayers.forEach(layerId => {
             map.setPaintProperty(layerId, 'raster-opacity', 0, {
-                duration: 500 // 0.5秒かけてフェードアウト
+                duration: 500
             });
             setTimeout(() => {
                 if (map.getLayer(layerId)) {
@@ -290,23 +290,23 @@ function updateRadarLayer(basetime, validtime) {
                 if (map.getSource(layerId)) {
                     map.removeSource(layerId);
                 }
-            }, 500); // フェードアウトが完了した後に削除
+            }, 500);
         });
 
-        // 新しいレイヤーをフェードイン
         map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
-            duration: 500 // 0.5秒かけてフェードイン
+            duration: 500
         });
 
-        // 現在のレイヤーを更新
         currentLayers = [newRadarLayerId];
     });
 
+    // 表示用の時刻をJSTに変換して表示
     const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getUTCDate().toString().padStart(2, '0')}日${validDateJST.getUTCHours().toString().padStart(2, '0')}時${validDateJST.getUTCMinutes().toString().padStart(2, '0')}分`;
+    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
