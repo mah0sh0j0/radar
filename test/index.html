@@ -149,7 +149,7 @@ function updateRadarLayer(basetime, validtime) {
 
     const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-    // 新しいレイヤーを作成
+    // 新しいレイヤーを先に追加するが、表示はまだしない
     map.addSource(newRadarLayerId, {
         type: 'raster',
         tiles: [tileUrl],
@@ -166,31 +166,33 @@ function updateRadarLayer(basetime, validtime) {
         }
     });
 
-    // 現在のレイヤーを記憶しておく
-    const oldLayers = [...currentLayers];
+    // 新しいレイヤーがロードされたら表示を切り替える
+    map.on('sourcedata', (e) => {
+        if (e.sourceId === newRadarLayerId && e.isSourceLoaded) {
+            // 古いレイヤーを徐々にフェードアウトしてから削除
+            currentLayers.forEach(layerId => {
+                map.setPaintProperty(layerId, 'raster-opacity', 0, {
+                    duration: 500 // 0.5秒かけてフェードアウト
+                });
+                setTimeout(() => {
+                    if (map.getLayer(layerId)) {
+                        map.removeLayer(layerId);
+                    }
+                    if (map.getSource(layerId)) {
+                        map.removeSource(layerId);
+                    }
+                }, 500); // フェードアウトが完了した後に削除
+            });
 
-    // 新しいレイヤーの透明度を上げていく
-    map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
-        duration: 500 // 0.5秒かけてフェードイン
+            // 新しいレイヤーの透明度を上げていく
+            map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
+                duration: 500 // 0.5秒かけてフェードイン
+            });
+
+            // 現在のレイヤーを更新
+            currentLayers = [newRadarLayerId];
+        }
     });
-
-    // 古いレイヤーを徐々にフェードアウトしてから削除
-    oldLayers.forEach(layerId => {
-        map.setPaintProperty(layerId, 'raster-opacity', 0, {
-            duration: 500 // 0.5秒かけてフェードアウト
-        });
-        setTimeout(() => {
-            if (map.getLayer(layerId)) {
-                map.removeLayer(layerId);
-            }
-            if (map.getSource(layerId)) {
-                map.removeSource(layerId);
-            }
-        }, 500); // フェードアウトが完了した後に削除
-    });
-
-    // 現在のレイヤーを更新
-    currentLayers = [newRadarLayerId];
 
     const validDateUTC = new Date(
         parseInt(validtime.slice(0, 4)),
@@ -204,6 +206,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
         function updateNavButtons() {
