@@ -245,11 +245,13 @@ function updateRadarLayer(basetime, validtime) {
         parseInt(validtime.slice(4, 6)) - 1,
         parseInt(validtime.slice(6, 8)),
         parseInt(validtime.slice(8, 10)),
-        parseInt(validtime.slice(10, 12))
+        parseInt(validtime.slice(10, 12)),
+        0 // 秒とミリ秒をゼロに設定
     );
 
-    // 現在時刻が有効時刻を1分以上経過していない場合、5分前のデータを使用
-    if (now.getTime() < validDateUTC.getTime() + 60000) {
+    // 現在時刻が有効時刻の1分以上後でなければ、5分前のデータを使用
+    if (now.getTime() <= validDateUTC.getTime() + 60000) {
+        // 5分前のデータにシフト
         validDateUTC.setMinutes(validDateUTC.getMinutes() - 5);
         validtime = `${validDateUTC.getUTCFullYear()}${(validDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}${validDateUTC.getUTCDate().toString().padStart(2, '0')}${validDateUTC.getUTCHours().toString().padStart(2, '0')}${validDateUTC.getUTCMinutes().toString().padStart(2, '0')}00`;
     }
@@ -306,6 +308,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
