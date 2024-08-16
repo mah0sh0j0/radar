@@ -144,7 +144,6 @@
                 mask: newMaskLayerId
             };
 
-            // validtime を使って正確な時刻を表示する
             const validDateUTC = new Date(validtime.slice(0, 4), validtime.slice(4, 6) - 1, validtime.slice(6, 8), validtime.slice(8, 10), validtime.slice(10, 12));
             const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
             const formattedDateJST = validDateJST.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false }).slice(0, -3);
@@ -253,7 +252,7 @@
                                 tileSize: 256,
                                 maxzoom: 19
                             }
-                        ],
+                        },
                         layers: [
                             {
                                 id: 'usgs-layer',
