@@ -277,7 +277,7 @@ function updateRadarLayer(basetime, validtime) {
                 document.getElementById('play-button').innerText = '▶︎';
             } else {
                 isPlaying = true;
-                document.getElementById('play-button').innerText = '⏸'; // Pause symbol
+                document.getElementById('play-button').innerText = '‖'; // 並列記号を使用
                 currentIndex = 0; // 再生開始時に最初に戻す
                 slider.value = currentIndex;
                 updateSlider();
