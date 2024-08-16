@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>レーダー</title>
+    <title>レーダー1335</title>
     <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
     <style>
@@ -14,42 +14,41 @@
 <body>
     <div id="map"></div>
     <script>
-        const proxyUrl = "http://localhost:8080/proxy?url=";
-        const targetUrl = "https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json";
+        // MapLibreの初期設定
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                version: 8,
+                sources: {
+                    'usgs': {
+                        type: 'raster',
+                        tiles: [
+                            'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+                        ],
+                        tileSize: 256,
+                        maxzoom: 19
+                    }
+                },
+                layers: [
+                    {
+                        id: 'usgs-layer',
+                        type: 'raster',
+                        source: 'usgs',
+                        minzoom: 0,
+                        maxzoom: 19
+                    }
+                ]
+            },
+            center: [139.6917, 35.6895], // 東京の中心
+            zoom: 6 // 初期ズームレベル
+        });
 
-        fetch(proxyUrl + encodeURIComponent(targetUrl))
+        // JMAのJSONからbasetimeとvalidtimeを取得してレーダー画像を表示
+        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
                 const basetime = data[0].basetime;
                 const validtime = data[0].validtime[0];
-
-                const map = new maplibregl.Map({
-                    container: 'map',
-                    style: {
-                        version: 8,
-                        sources: {
-                            'usgs': {
-                                type: 'raster',
-                                tiles: [
-                                    'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
-                                ],
-                                tileSize: 256,
-                                maxzoom: 19
-                            }
-                        },
-                        layers: [
-                            {
-                                id: 'usgs-layer',
-                                type: 'raster',
-                                source: 'usgs',
-                                minzoom: 0,
-                                maxzoom: 19
-                            }
-                        ]
-                    },
-                    center: [139.6917, 35.6895], // 東京の中心
-                    zoom: 6 // 初期ズームレベル
-                });
 
                 map.on('load', function () {
                     map.addSource('jma-radar', {
