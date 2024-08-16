@@ -151,9 +151,10 @@ function updateRadarLayer(basetime, validtime) {
         parseInt(validtime.slice(10, 12))
     );
 
-    // 現在の時刻が futureTime よりも過去である場合、または、現在の時刻が futureTime より1分後になっていない場合
-    if (now < futureTime || now.getTime() < futureTime.getTime() + 60 * 1000) {
-        console.log("Skipping data that is too recent:", validtime);
+    // 現在の時刻が futureTime より1分以上経過していない場合はスキップ
+    const oneMinuteAfterFutureTime = new Date(futureTime.getTime() + 60 * 1000);
+    if (now.getTime() < oneMinuteAfterFutureTime.getTime()) {
+        console.log("Skipping data until 1 minute after the valid time:", validtime);
         return;
     }
 
@@ -219,6 +220,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
