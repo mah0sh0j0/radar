@@ -149,7 +149,7 @@ function updateRadarLayer(basetime, validtime) {
 
     const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-    // 新しいレイヤーを先に追加するが、表示はまだしない
+    // 新しいレイヤーを追加するが、初期状態では非表示
     map.addSource(newRadarLayerId, {
         type: 'raster',
         tiles: [tileUrl],
@@ -166,32 +166,23 @@ function updateRadarLayer(basetime, validtime) {
         }
     });
 
-    // 新しいレイヤーがロードされたら表示を切り替える
-    map.on('sourcedata', (e) => {
-        if (e.sourceId === newRadarLayerId && e.isSourceLoaded) {
-            // 古いレイヤーを徐々にフェードアウトしてから削除
-            currentLayers.forEach(layerId => {
-                map.setPaintProperty(layerId, 'raster-opacity', 0, {
-                    duration: 500 // 0.5秒かけてフェードアウト
-                });
-                setTimeout(() => {
-                    if (map.getLayer(layerId)) {
-                        map.removeLayer(layerId);
-                    }
-                    if (map.getSource(layerId)) {
-                        map.removeSource(layerId);
-                    }
-                }, 500); // フェードアウトが完了した後に削除
-            });
+    // 新しいレイヤーが完全にロードされたら古いレイヤーを削除し、新しいレイヤーを表示
+    map.once('idle', () => {
+        // 古いレイヤーを削除
+        currentLayers.forEach(layerId => {
+            if (map.getLayer(layerId)) {
+                map.removeLayer(layerId);
+            }
+            if (map.getSource(layerId)) {
+                map.removeSource(layerId);
+            }
+        });
 
-            // 新しいレイヤーの透明度を上げていく
-            map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
-                duration: 500 // 0.5秒かけてフェードイン
-            });
+        // 新しいレイヤーの透明度を即座に100%に設定
+        map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1);
 
-            // 現在のレイヤーを更新
-            currentLayers = [newRadarLayerId];
-        }
+        // 現在のレイヤーを更新
+        currentLayers = [newRadarLayerId];
     });
 
     const validDateUTC = new Date(
@@ -206,6 +197,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
