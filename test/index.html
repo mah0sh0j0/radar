@@ -233,80 +233,84 @@
             })
             .catch(error => console.error('Error loading JSON:', error));
 
-        function updateRadarLayer(basetime, validtime) {
-            if (!map) return;
+function updateRadarLayer(basetime, validtime) {
+    if (!map) return;
 
-            // 現在時刻を取得
-            const now = new Date();
+    // 現在時刻を取得
+    const now = new Date();
 
-            // validtimeをUTCとして解析
-            const validDateUTC = new Date(
-                parseInt(validtime.slice(0, 4)),
-                parseInt(validtime.slice(4, 6)) - 1,
-                parseInt(validtime.slice(6, 8)),
-                parseInt(validtime.slice(8, 10)),
-                parseInt(validtime.slice(10, 12))
-            );
+    // validtimeをUTCとして解析
+    const validDateUTC = new Date(
+        parseInt(validtime.slice(0, 4)),
+        parseInt(validtime.slice(4, 6)) - 1,
+        parseInt(validtime.slice(6, 8)),
+        parseInt(validtime.slice(8, 10)),
+        parseInt(validtime.slice(10, 12))
+    );
 
-            // 現在時刻が有効時刻の1分以上後でなければ、前回のデータを表示
-            if (now.getTime() < validDateUTC.getTime() + 60000) {
-                // 前回のデータ（5分前のデータ）を表示
-                const previousValidTime = new Date(validDateUTC.getTime() - 5 * 60 * 1000);
-                validtime = `${previousValidTime.getUTCFullYear()}${(previousValidTime.getUTCMonth() + 1).toString().padStart(2, '0')}${previousValidTime.getUTCDate().toString().padStart(2, '0')}${previousValidTime.getUTCHours().toString().padStart(2, '0')}${previousValidTime.getUTCMinutes().toString().padStart(2, '0')}`;
-            }
+    // 現在時刻が有効時刻の1分以上後でなければ、前回のデータを表示
+    if (now.getTime() < validDateUTC.getTime() + 60000) {
+        // 前回のデータ（5分前のデータ）を表示
+        const previousValidTime = new Date(validDateUTC.getTime() - 5 * 60 * 1000);
+        validtime = `${previousValidTime.getUTCFullYear()}${(previousValidTime.getUTCMonth() + 1).toString().padStart(2, '0')}${previousValidTime.getUTCDate().toString().padStart(2, '0')}${previousValidTime.getUTCHours().toString().padStart(2, '0')}${previousValidTime.getUTCMinutes().toString().padStart(2, '0')}`;
+    } else if (now.getTime() < validDateUTC.getTime()) {
+        // 現在時刻が有効時刻を超えていない場合、何も表示しない
+        return;
+    }
 
-            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
-            const newRadarLayerId = `jma-radar-${Date.now()}`;
+    const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-            // 新しいレイヤーを追加するが、初期状態では非表示
-            map.addSource(newRadarLayerId, {
-                type: 'raster',
-                tiles: [tileUrl],
-                tileSize: 256,
-                maxzoom: 10
-            });
+    // 新しいレイヤーを追加するが、初期状態では非表示
+    map.addSource(newRadarLayerId, {
+        type: 'raster',
+        tiles: [tileUrl],
+        tileSize: 256,
+        maxzoom: 10
+    });
 
-            map.addLayer({
-                id: newRadarLayerId,
-                type: 'raster',
-                source: newRadarLayerId,
-                paint: {
-                    'raster-opacity': 0 // 初期の透明度を0に設定
-                }
-            }, 'jma-mask-layer'); // レイヤーの順序を指定：'jma-mask-layer'の下に追加
-
-            // レイヤーのロードが完了したらフェードイン
-            map.once('idle', () => {
-                // 古いレイヤーを少し遅らせてフェードアウト
-                currentLayers.forEach(layerId => {
-                    map.setPaintProperty(layerId, 'raster-opacity', 0, {
-                        duration: 500 // 0.5秒かけてフェードアウト
-                    });
-                    setTimeout(() => {
-                        if (map.getLayer(layerId)) {
-                            map.removeLayer(layerId);
-                        }
-                        if (map.getSource(layerId)) {
-                            map.removeSource(layerId);
-                        }
-                    }, 500); // フェードアウトが完了した後に削除
-                });
-
-                // 新しいレイヤーをフェードイン
-                map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
-                    duration: 500 // 0.5秒かけてフェードイン
-                });
-
-                // 現在のレイヤーを更新
-                currentLayers = [newRadarLayerId];
-            });
-
-            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-            const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
-
-            document.getElementById('time-display').innerText = formattedDate;
+    map.addLayer({
+        id: newRadarLayerId,
+        type: 'raster',
+        source: newRadarLayerId,
+        paint: {
+            'raster-opacity': 0 // 初期の透明度を0に設定
         }
+    }, 'jma-mask-layer'); // レイヤーの順序を指定：'jma-mask-layer'の下に追加
+
+    // レイヤーのロードが完了したらフェードイン
+    map.once('idle', () => {
+        // 古いレイヤーを少し遅らせてフェードアウト
+        currentLayers.forEach(layerId => {
+            map.setPaintProperty(layerId, 'raster-opacity', 0, {
+                duration: 500 // 0.5秒かけてフェードアウト
+            });
+            setTimeout(() => {
+                if (map.getLayer(layerId)) {
+                    map.removeLayer(layerId);
+                }
+                if (map.getSource(layerId)) {
+                    map.removeSource(layerId);
+                }
+            }, 500); // フェードアウトが完了した後に削除
+        });
+
+        // 新しいレイヤーをフェードイン
+        map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
+            duration: 500 // 0.5秒かけてフェードイン
+        });
+
+        // 現在のレイヤーを更新
+        currentLayers = [newRadarLayerId];
+    });
+
+    const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
+
+    document.getElementById('time-display').innerText = formattedDate;
+}
+
 
         function updateNavButtons() {
             document.getElementById('prev-button').disabled = currentIndex === 0;
