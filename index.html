@@ -14,62 +14,61 @@
 <body>
     <div id="map"></div>
     <script>
-        // MapLibreの初期設定
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: {
-                version: 8,
-                sources: {
-                    'usgs': {
+        const proxyUrl = "http://localhost:8080/proxy?url=";
+        const targetUrl = "https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json";
+
+        fetch(proxyUrl + encodeURIComponent(targetUrl))
+            .then(response => response.json())
+            .then(data => {
+                const basetime = data[0].basetime;
+                const validtime = data[0].validtime[0];
+
+                const map = new maplibregl.Map({
+                    container: 'map',
+                    style: {
+                        version: 8,
+                        sources: {
+                            'usgs': {
+                                type: 'raster',
+                                tiles: [
+                                    'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+                                ],
+                                tileSize: 256,
+                                maxzoom: 19
+                            }
+                        },
+                        layers: [
+                            {
+                                id: 'usgs-layer',
+                                type: 'raster',
+                                source: 'usgs',
+                                minzoom: 0,
+                                maxzoom: 19
+                            }
+                        ]
+                    },
+                    center: [139.6917, 35.6895], // 東京の中心
+                    zoom: 6 // 初期ズームレベル
+                });
+
+                map.on('load', function () {
+                    map.addSource('jma-radar', {
                         type: 'raster',
                         tiles: [
-                            'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+                            `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`
                         ],
                         tileSize: 256,
-                        maxzoom: 19
-                    }
-                },
-                layers: [
-                    {
-                        id: 'usgs-layer',
+                        maxzoom: 10
+                    });
+
+                    map.addLayer({
+                        id: 'jma-radar-layer',
                         type: 'raster',
-                        source: 'usgs',
-                        minzoom: 0,
-                        maxzoom: 19
-                    }
-                ]
-            },
-            center: [139.6917, 35.6895], // 東京の中心
-            zoom: 6 // 初期ズームレベル
-        });
-
-        // JSONからbasetimeとvalidtimeを取得してレーダー画像を表示
-fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
-    .then(response => response.json())
-    .then(data => {
-        console.log('JSON data:', data);  // JSONデータを確認
-        const basetime = data[0].basetime;
-        const validtime = data[0].validtime[0];
-        const radarTileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
-        console.log('Radar Tile URL:', radarTileUrl);  // URLを確認
-
-        map.on('load', function () {
-            map.addSource('jma-radar', {
-                type: 'raster',
-                tiles: [radarTileUrl],
-                tileSize: 256,
-                maxzoom: 10
-            });
-
-            map.addLayer({
-                id: 'jma-radar-layer',
-                type: 'raster',
-                source: 'jma-radar'
-            });
-        });
-    })
-    .catch(error => console.error('Error loading JSON:', error));
-
+                        source: 'jma-radar'
+                    });
+                });
+            })
+            .catch(error => console.error('Error loading JSON:', error));
     </script>
 </body>
 </html>
