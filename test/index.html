@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>レーダー</title>
     <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- FontAwesomeのリンク -->
     <style>
         body, html { 
@@ -54,12 +55,12 @@
             background-color: #a7c7e7;
             color: #ffffff;
             border: none;
-            padding: 5px 10px;
+            padding: 5px 8px;
             cursor: pointer;
             border-radius: 20px;
             margin: 0 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            font-size: 20px; /* ボタンのサイズを統一 */
+            font-size: 16px; /* ボタンのサイズを小さく調整 */
         }
         .nav-button:disabled {
             background-color: #d3d3d3;
@@ -305,6 +306,14 @@
                     style: {
                         version: 8,
                         sources: {
+                            'jma-mask': {
+                                type: 'raster',
+                                tiles: [
+                                    'https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png'
+                                ],
+                                tileSize: 256,
+                                maxzoom: 10
+                            },
                             'usgs': {
                                 type: 'raster',
                                 tiles: [
@@ -315,6 +324,13 @@
                             }
                         },
                         layers: [
+                            {
+                                id: 'jma-mask-layer',
+                                type: 'raster',
+                                source: 'jma-mask',
+                                minzoom: 0,
+                                maxzoom: 10
+                            },
                             {
                                 id: 'usgs-layer',
                                 type: 'raster',
