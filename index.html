@@ -327,7 +327,12 @@
         }
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 validtimes = data.map(item => ({
                     basetime: item.basetime,
@@ -389,7 +394,10 @@
                         `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
                 });
             })
-            .catch(error => console.error('Error loading JSON:', error));
+            .catch(error => {
+                console.error('Error loading JSON:', error);
+                document.getElementById('time-display').innerText = 'データの取得に失敗しました';
+            });
     </script>
 </body>
 </html>
