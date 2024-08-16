@@ -243,12 +243,16 @@ function updateRadarLayer(basetime, validtime) {
     const nearestPastTime = new Date(Math.floor(now.getTime() / (5 * 60 * 1000)) * (5 * 60 * 1000));
     nearestPastTime.setSeconds(0, 0);
 
+    // basetimeをフォーマット
+    const baseDate = new Date(now.getTime());
+    const formattedBaseTime = `${baseDate.getUTCFullYear()}${(baseDate.getUTCMonth() + 1).toString().padStart(2, '0')}${baseDate.getUTCDate().toString().padStart(2, '0')}${baseDate.getUTCHours().toString().padStart(2, '0')}${baseDate.getUTCMinutes().toString().padStart(2, '0')}00`;
+
     const validDateUTC = nearestPastTime;
 
     // validtimeを新たに設定
     validtime = `${validDateUTC.getUTCFullYear()}${(validDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}${validDateUTC.getUTCDate().toString().padStart(2, '0')}${validDateUTC.getUTCHours().toString().padStart(2, '0')}${validDateUTC.getUTCMinutes().toString().padStart(2, '0')}`;
 
-    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${formattedBaseTime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
     const newRadarLayerId = `jma-radar-${Date.now()}`;
 
@@ -299,6 +303,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
