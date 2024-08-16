@@ -51,19 +51,19 @@
             align-items: center;
             width: 100%;
         }
-.nav-button {
-    background-color: #a7c7e7;
-    color: #ffffff;
-    border: none;
-    padding: 5px 8px;
-    cursor: pointer;
-    border-radius: 20px;
-    margin: 0 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    font-size: 16px;
-    width: 40px; /* 幅を統一 */
-    text-align: center; /* テキストを中央揃え */
-}
+        .nav-button {
+            background-color: #a7c7e7;
+            color: #ffffff;
+            border: none;
+            padding: 5px 8px;
+            cursor: pointer;
+            border-radius: 20px;
+            margin: 0 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            font-size: 16px; /* ボタンのサイズを統一 */
+            width: 40px; /* 幅を統一 */
+            text-align: center; /* テキストを中央揃え */
+        }
         .nav-button i {
             font-size: 16px;
         }
@@ -71,13 +71,12 @@
             background-color: #d3d3d3;
             cursor: not-allowed;
         }
-#toggle-visibility {
-    font-size: 14px; /* 文字サイズを一回り小さく */
-    padding: 5px 8px;
-    height: 32px; /* 他のボタンと高さを揃える */
-    width: 70px; /* 経緯度ボタンの幅を指定 */
-}
-
+        #toggle-visibility {
+            font-size: 14px; /* 文字サイズを一回り小さく */
+            padding: 5px 8px;
+            height: 32px; /* 他のボタンと高さを揃える */
+            width: 70px; /* 経緯度ボタンの幅を指定 */
+        }
         #crosshair-horizontal, #crosshair-vertical {
             position: absolute;
             background: #ffcdf4;
@@ -156,92 +155,158 @@
         let isPlaying = false; // 自動再生の状態
         let playInterval = null; // 自動再生のインターバル
 
-function updateRadarLayer(basetime, validtime) {
-    if (!map) return;
+        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
+            .then(response => response.json())
+            .then(data => {
+                validtimes = data.map(item => ({
+                    basetime: item.basetime,
+                    validtime: item.validtime
+                }));
 
-    // 現在時刻を取得
-    const now = new Date();
+                if (validtimes.length === 0) {
+                    document.getElementById('time-display').innerText = 'データが見つかりませんでした';
+                    return;
+                }
 
-    // validtimeをUTCとして解析
-    const validDateUTC = new Date(
-        parseInt(validtime.slice(0, 4)),
-        parseInt(validtime.slice(4, 6)) - 1,
-        parseInt(validtime.slice(6, 8)),
-        parseInt(validtime.slice(8, 10)),
-        parseInt(validtime.slice(10, 12))
-    );
+                map = new maplibregl.Map({
+                    container: 'map',
+                    style: {
+                        version: 8,
+                        sources: {
+                            'usgs': {
+                                type: 'raster',
+                                tiles: [
+                                    'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+                                ],
+                                tileSize: 256,
+                                maxzoom: 19
+                            },
+                            'jma-mask': {
+                                type: 'raster',
+                                tiles: [
+                                    'https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png'
+                                ],
+                                tileSize: 256,
+                                maxzoom: 10
+                            }
+                        },
+                        layers: [
+                            {
+                                id: 'usgs-layer',
+                                type: 'raster',
+                                source: 'usgs',
+                                minzoom: 0,
+                                maxzoom: 19
+                            }
+                        ]
+                    },
+                    center: [139, 35],
+                    zoom: 6,
+                    minZoom: 4,
+                    maxZoom: 14
+                });
 
-    // 現在時刻よりも1分以上未来のデータは表示しない
-    if (validDateUTC.getTime() > now.getTime() + 60000) {
-        // データを表示しない
-        return;
-    }
+                map.on('load', function() {
+                    map.addLayer({
+                        id: 'jma-mask-layer',
+                        type: 'raster',
+                        source: 'jma-mask',
+                        minzoom: 0,
+                        maxzoom: 10
+                    });
 
-    // 現在時刻が有効時刻から1分未満の場合は、前回のデータを表示
-    if (now.getTime() < validDateUTC.getTime() + 60000) {
-        // 前回のデータ（5分前のデータ）を表示
-        const previousValidTime = new Date(validDateUTC.getTime() - 5 * 60 * 1000);
-        validtime = `${previousValidTime.getUTCFullYear()}${(previousValidTime.getUTCMonth() + 1).toString().padStart(2, '0')}${previousValidTime.getUTCDate().toString().padStart(2, '0')}${previousValidTime.getUTCHours().toString().padStart(2, '0')}${previousValidTime.getUTCMinutes().toString().padStart(2, '0')}`;
-    }
+                    map.resize();
+                    currentIndex = maxOffset; // 最新のインデックスに設定
+                    updateSlider();
+                    updateNavButtons();
 
-    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+                    map.on('move', function() {
+                        const center = map.getCenter();
+                        document.getElementById('centerLatLngDisplay').innerText = 
+                            `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
+                    });
 
-    const newRadarLayerId = `jma-radar-${Date.now()}`;
+                    const initialCenter = map.getCenter();
+                    document.getElementById('centerLatLngDisplay').innerText = 
+                        `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
+                });
+            })
+            .catch(error => console.error('Error loading JSON:', error));
 
-    // 新しいレイヤーを追加するが、初期状態では非表示
-    map.addSource(newRadarLayerId, {
-        type: 'raster',
-        tiles: [tileUrl],
-        tileSize: 256,
-        maxzoom: 10
-    });
+        function updateRadarLayer(basetime, validtime) {
+            if (!map) return;
 
-    map.addLayer({
-        id: newRadarLayerId,
-        type: 'raster',
-        source: newRadarLayerId,
-        paint: {
-            'raster-opacity': 0 // 初期の透明度を0に設定
-        }
-    });
+            // 現在時刻を取得
+            const now = new Date();
 
-    // レイヤーのロードが完了したらフェードイン
-    map.once('idle', () => {
-        // 古いレイヤーを少し遅らせてフェードアウト
-        currentLayers.forEach(layerId => {
-            map.setPaintProperty(layerId, 'raster-opacity', 0, {
-                duration: 500 // 0.5秒かけてフェードアウト
+            // validtimeをUTCとして解析
+            const validDateUTC = new Date(
+                parseInt(validtime.slice(0, 4)),
+                parseInt(validtime.slice(4, 6)) - 1,
+                parseInt(validtime.slice(6, 8)),
+                parseInt(validtime.slice(8, 10)),
+                parseInt(validtime.slice(10, 12))
+            );
+
+            // 現在時刻が有効時刻の1分以上後でなければ、前回のデータを表示
+            if (now.getTime() < validDateUTC.getTime() + 60000) {
+                // 前回のデータ（5分前のデータ）を表示
+                const previousValidTime = new Date(validDateUTC.getTime() - 5 * 60 * 1000);
+                validtime = `${previousValidTime.getUTCFullYear()}${(previousValidTime.getUTCMonth() + 1).toString().padStart(2, '0')}${previousValidTime.getUTCDate().toString().padStart(2, '0')}${previousValidTime.getUTCHours().toString().padStart(2, '0')}${previousValidTime.getUTCMinutes().toString().padStart(2, '0')}`;
+            }
+
+            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+
+            const newRadarLayerId = `jma-radar-${Date.now()}`;
+
+            // 新しいレイヤーを追加するが、初期状態では非表示
+            map.addSource(newRadarLayerId, {
+                type: 'raster',
+                tiles: [tileUrl],
+                tileSize: 256,
+                maxzoom: 10
             });
-            setTimeout(() => {
-                if (map.getLayer(layerId)) {
-                    map.removeLayer(layerId);
+
+            map.addLayer({
+                id: newRadarLayerId,
+                type: 'raster',
+                source: newRadarLayerId,
+                paint: {
+                    'raster-opacity': 0 // 初期の透明度を0に設定
                 }
-                if (map.getSource(layerId)) {
-                    map.removeSource(layerId);
-                }
-            }, 500); // フェードアウトが完了した後に削除
-        });
+            }, 'jma-mask-layer'); // レイヤーの順序を指定：'jma-mask-layer'の下に追加
 
-        // 新しいレイヤーをフェードイン
-        map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
-            duration: 500 // 0.5秒かけてフェードイン
-        });
+            // レイヤーのロードが完了したらフェードイン
+            map.once('idle', () => {
+                // 古いレイヤーを少し遅らせてフェードアウト
+                currentLayers.forEach(layerId => {
+                    map.setPaintProperty(layerId, 'raster-opacity', 0, {
+                        duration: 500 // 0.5秒かけてフェードアウト
+                    });
+                    setTimeout(() => {
+                        if (map.getLayer(layerId)) {
+                            map.removeLayer(layerId);
+                        }
+                        if (map.getSource(layerId)) {
+                            map.removeSource(layerId);
+                        }
+                    }, 500); // フェードアウトが完了した後に削除
+                });
 
-        // 現在のレイヤーを更新
-        currentLayers = [newRadarLayerId];
-    });
+                // 新しいレイヤーをフェードイン
+                map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
+                    duration: 500 // 0.5秒かけてフェードイン
+                });
 
-    const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
+                // 現在のレイヤーを更新
+                currentLayers = [newRadarLayerId];
+            });
 
-    document.getElementById('time-display').innerText = formattedDate;
-}
+            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+            const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
 
-
-
-
-
-
+            document.getElementById('time-display').innerText = formattedDate;
+        }
 
         function updateNavButtons() {
             document.getElementById('prev-button').disabled = currentIndex === 0;
@@ -331,83 +396,6 @@ function updateRadarLayer(basetime, validtime) {
 
             return { basetime: pastBaseTime, validtime: pastValidTime };
         }
-
-        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
-            .then(response => response.json())
-            .then(data => {
-                validtimes = data.map(item => ({
-                    basetime: item.basetime,
-                    validtime: item.validtime
-                }));
-
-                if (validtimes.length === 0) {
-                    document.getElementById('time-display').innerText = 'データが見つかりませんでした';
-                    return;
-                }
-
-                map = new maplibregl.Map({
-                    container: 'map',
-                    style: {
-                        version: 8,
-                        sources: {
-                            'jma-mask': {
-                                type: 'raster',
-                                tiles: [
-                                    'https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png'
-                                ],
-                                tileSize: 256,
-                                maxzoom: 10
-                            },
-                            'usgs': {
-                                type: 'raster',
-                                tiles: [
-                                    'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
-                                ],
-                                tileSize: 256,
-                                maxzoom: 19
-                            }
-                        },
-                        layers: [
-                            {
-                                id: 'usgs-layer',
-                                type: 'raster',
-                                source: 'usgs',
-                                minzoom: 0,
-                                maxzoom: 19
-                            },
-                            {
-                                id: 'jma-mask-layer',
-                                type: 'raster',
-                                source: 'jma-mask',
-                                minzoom: 0,
-                                maxzoom: 10
-                            }
-                        ]
-                    },
-                    center: [139, 35],
-                    zoom: 6,
-                    minZoom: 4,
-                    maxZoom: 14
-                });
-
-                map.on('load', function() {
-                    map.resize();
-                    currentIndex = maxOffset; // 最新のインデックスに設定
-                    updateSlider();
-                    updateNavButtons();
-
-                    map.on('move', function() {
-                        const center = map.getCenter();
-                        document.getElementById('centerLatLngDisplay').innerText = 
-                            `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
-                    });
-
-                    const initialCenter = map.getCenter();
-                    document.getElementById('centerLatLngDisplay').innerText = 
-                        `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
-                });
-            })
-            .catch(error => console.error('Error loading JSON:', error));
     </script>
 </body>
 </html>
