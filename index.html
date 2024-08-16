@@ -182,8 +182,25 @@
         };
 
         function calculatePastTime(basetime, validtime, offset) {
-            const pastBaseTime = (parseInt(basetime) - offset * 500).toString().padStart(12, '0');
-            const pastValidTime = (parseInt(validtime) - offset * 500).toString().padStart(12, '0');
+            // 5分ごとの時刻計算を60進法に対応させる
+            const date = new Date(
+                parseInt(basetime.slice(0, 4)),
+                parseInt(basetime.slice(4, 6)) - 1,
+                parseInt(basetime.slice(6, 8)),
+                parseInt(basetime.slice(8, 10)),
+                parseInt(basetime.slice(10, 12))
+            );
+            date.setMinutes(date.getMinutes() - offset * 5);
+
+            const year = date.getFullYear().toString().padStart(4, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+
+            const pastBaseTime = `${year}${month}${day}${hours}${minutes}`;
+            const pastValidTime = pastBaseTime;
+
             return { basetime: pastBaseTime, validtime: pastValidTime };
         }
 
