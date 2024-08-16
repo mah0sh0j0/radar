@@ -44,30 +44,32 @@
         });
 
         // JSONからbasetimeとvalidtimeを取得してレーダー画像を表示
-        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
-            .then(response => response.json())
-            .then(data => {
-                const basetime = data[0].basetime;
-                const validtime = data[0].validtime[0];
+fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
+    .then(response => response.json())
+    .then(data => {
+        console.log('JSON data:', data);  // JSONデータを確認
+        const basetime = data[0].basetime;
+        const validtime = data[0].validtime[0];
+        const radarTileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+        console.log('Radar Tile URL:', radarTileUrl);  // URLを確認
 
-                map.on('load', function () {
-                    map.addSource('jma-radar', {
-                        type: 'raster',
-                        tiles: [
-                            `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`
-                        ],
-                        tileSize: 256,
-                        maxzoom: 10
-                    });
+        map.on('load', function () {
+            map.addSource('jma-radar', {
+                type: 'raster',
+                tiles: [radarTileUrl],
+                tileSize: 256,
+                maxzoom: 10
+            });
 
-                    map.addLayer({
-                        id: 'jma-radar-layer',
-                        type: 'raster',
-                        source: 'jma-radar'
-                    });
-                });
-            })
-            .catch(error => console.error('Error loading JSON:', error));
+            map.addLayer({
+                id: 'jma-radar-layer',
+                type: 'raster',
+                source: 'jma-radar'
+            });
+        });
+    })
+    .catch(error => console.error('Error loading JSON:', error));
+
     </script>
 </body>
 </html>
