@@ -144,11 +144,16 @@
                 mask: newMaskLayerId
             };
 
-            const validDateUTC = new Date(validtime.slice(0, 4), validtime.slice(4, 6) - 1, validtime.slice(6, 8), validtime.slice(8, 10), validtime.slice(10, 12));
-            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-            const formattedDateJST = validDateJST.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false }).slice(0, -3);
+            // validtime を使って正確な時刻を表示する
+            const year = validtime.slice(0, 4);
+            const month = validtime.slice(4, 6);
+            const day = validtime.slice(6, 8);
+            const hour = validtime.slice(8, 10);
+            const minute = validtime.slice(10, 12);
 
-            document.getElementById('time-display').innerText = formattedDateJST;
+            const formattedDate = `${year}年${month}月${day}日${hour}時${minute}分`;
+
+            document.getElementById('time-display').innerText = formattedDate;
             updateNavButtons();
         }
 
