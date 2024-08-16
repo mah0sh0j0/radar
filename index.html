@@ -19,8 +19,8 @@
             padding: 10px;
             z-index: 1;
             display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: space-between;
         }
         #time-display {
             margin-bottom: 5px;
@@ -28,8 +28,7 @@
         #nav-buttons {
             display: flex;
             justify-content: space-between;
-            width: 100%;
-            margin-top: 5px;
+            align-items: center;
         }
         .nav-button {
             background-color: #007bff;
@@ -38,6 +37,7 @@
             padding: 5px 10px;
             cursor: pointer;
             border-radius: 3px;
+            margin-left: 5px;
         }
         .nav-button:disabled {
             background-color: #cccccc;
@@ -75,16 +75,18 @@
             white-space: pre-line; /* 改行を反映 */
         }
         #slider {
-            width: 100%;
-            margin-top: 10px;
+            width: 200px; /* 横幅を調整 */
+            margin-left: 10px;
         }
     </style>
 </head>
 <body>
     <div id="nav-bar">
         <div id="time-display">Loading...</div>
-        <input type="range" id="slider" min="0" max="36" step="1" value="36">
         <div id="nav-buttons">
+            <input type="range" id="slider" min="0" max="36" step="1" value="36">
+            <button id="toggle-crosshair" class="nav-button">十字線表示/非表示</button>
+            <button id="toggle-latlng" class="nav-button">経緯度表示/非表示</button>
             <button id="prev-button" class="nav-button">&lt;</button>
             <button id="next-button" class="nav-button">&gt;</button>
         </div>
@@ -100,6 +102,8 @@
         let currentLayer = null;
         let maxOffset = 36; // 最大で36（3時間前）まで
         let slider = document.getElementById('slider');
+        let crosshairVisible = true;
+        let latlngVisible = true;
 
         function updateRadarLayer(basetime, validtime) {
             if (!map) return;
@@ -204,6 +208,17 @@
             }
         };
 
+        document.getElementById('toggle-crosshair').onclick = () => {
+            crosshairVisible = !crosshairVisible;
+            document.getElementById('crosshair-horizontal').style.display = crosshairVisible ? 'block' : 'none';
+            document.getElementById('crosshair-vertical').style.display = crosshairVisible ? 'block' : 'none';
+        };
+
+        document.getElementById('toggle-latlng').onclick = () => {
+            latlngVisible = !latlngVisible;
+            document.getElementById('centerLatLngDisplay').style.display = latlngVisible ? 'block' : 'none';
+        };
+
         function calculatePastTime(basetime, validtime, offset) {
             const date = new Date(
                 parseInt(basetime.slice(0, 4)),
@@ -224,67 +239,68 @@
             const pastValidTime = pastBaseTime;
 
             return { basetime: pastBaseTime, validtime: pastValidTime };
-}
-            fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
-        .then(response => response.json())
-        .then(data => {
-            validtimes = data.map(item => ({
-                basetime: item.basetime,
-                validtime: item.validtime
-            }));
+        }
 
-            if (validtimes.length === 0) {
-                document.getElementById('time-display').innerText = 'データが見つかりませんでした';
-                return;
-            }
+        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
+            .then(response => response.json())
+            .then(data => {
+                validtimes = data.map(item => ({
+                    basetime: item.basetime,
+                    validtime: item.validtime
+                }));
 
-            map = new maplibregl.Map({
-                container: 'map',
-                style: {
-                    version: 8,
-                    sources: {
-                        'usgs': {
-                            type: 'raster',
-                            tiles: [
-                                'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
-                            ],
-                            tileSize: 256,
-                            maxzoom: 19
-                        }
+                if (validtimes.length === 0) {
+                    document.getElementById('time-display').innerText = 'データが見つかりませんでした';
+                    return;
+                }
+
+                map = new maplibregl.Map({
+                    container: 'map',
+                    style: {
+                        version: 8,
+                        sources: {
+                            'usgs': {
+                                type: 'raster',
+                                tiles: [
+                                    'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+                                ],
+                                tileSize: 256,
+                                maxzoom: 19
+                            }
+                        },
+                        layers: [
+                            {
+                                id: 'usgs-layer',
+                                type: 'raster',
+                                source: 'usgs',
+                                minzoom: 0,
+                                maxzoom: 19
+                            }
+                        ]
                     },
-                    layers: [
-                        {
-                            id: 'usgs-layer',
-                            type: 'raster',
-                            source: 'usgs',
-                            minzoom: 0,
-                            maxzoom: 19
-                        }
-                    ]
-                },
-                center: [139, 35],
-                zoom: 6,
-                minZoom: 4,  // 最小ズームレベル
-                maxZoom: 14  // 最大ズームレベル
-            });
-
-            map.on('load', function () {
-                currentIndex = maxOffset; // 最新のデータを表示する
-                updateSlider();
-                updateNavButtons();
-
-                map.on('move', function () {
-                    const center = map.getCenter();
-                    document.getElementById('centerLatLngDisplay').innerText = 
-                        `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
+                    center: [139, 35],
+                    zoom: 6,
+                    minZoom: 4,  // 最小ズームレベル
+                    maxZoom: 14  // 最大ズームレベル
                 });
 
-                const initialCenter = map.getCenter();
-                document.getElementById('centerLatLngDisplay').innerText = 
-                    `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
-            });
-        })
-        .catch(error => console.error('Error loading JSON:', error));
-</script>
+                map.on('load', function () {
+                    currentIndex = maxOffset; // 最新のデータを表示する
+                    updateSlider();
+                    updateNavButtons();
+
+                    map.on('move', function () {
+                        const center = map.getCenter();
+                        document.getElementById('centerLatLngDisplay').innerText = 
+                            `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
+                    });
+
+                    const initialCenter = map.getCenter();
+                    document.getElementById('centerLatLngDisplay').innerText = 
+                        `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
+                });
+            })
+            .catch(error => console.error('Error loading JSON:', error));
+    </script>
 </body>
 </html>
