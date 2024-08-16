@@ -117,7 +117,8 @@
                 parseInt(validtime.slice(10, 12))
             );
 
-            if (futureTime > now) {
+            // 45秒未満の時はまだ画像を表示しない
+            if (futureTime > now || (now.getMinutes() === futureTime.getMinutes() && now.getSeconds() < 45)) {
                 console.log("Skipping future time:", validtime);
                 return;
             }
@@ -273,11 +274,11 @@
                                 type: 'raster',
                                 tiles: [
                                     'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
-                                    ],
+                                ],
                                 tileSize: 256,
                                 maxzoom: 19
                             }
-                    },
+                        },
                         layers: [
                             {
                                 id: 'usgs-layer',
