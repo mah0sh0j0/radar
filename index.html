@@ -53,15 +53,16 @@
         let map;
         let currentIndex = 0;
         let validtimes = [];
+        let currentLayer = null; // currentLayerを初期化
 
         function updateRadarLayer(basetime, validtime) {
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
             const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
-            const newRadarSource = `jma-radar-${Date.now()}`;
-            const newMaskSource = `jma-mask-${Date.now()}`;
+            const newRadarLayerId = `jma-radar-${Date.now()}`;
+            const newMaskLayerId = `jma-mask-${Date.now()}`;
 
-            map.addSource(newRadarSource, {
+            map.addSource(newRadarLayerId, {
                 type: 'raster',
                 tiles: [tileUrl],
                 tileSize: 256,
@@ -69,12 +70,12 @@
             });
 
             map.addLayer({
-                id: newRadarSource,
+                id: newRadarLayerId,
                 type: 'raster',
-                source: newRadarSource
+                source: newRadarLayerId
             });
 
-            map.addSource(newMaskSource, {
+            map.addSource(newMaskLayerId, {
                 type: 'raster',
                 tiles: [maskUrl],
                 tileSize: 256,
@@ -82,22 +83,32 @@
             });
 
             map.addLayer({
-                id: newMaskSource,
+                id: newMaskLayerId,
                 type: 'raster',
-                source: newMaskSource
+                source: newMaskLayerId
             });
 
+            // 既存のレイヤーを削除
             if (currentLayer) {
-                map.removeLayer(currentLayer.radar);
-                map.removeSource(currentLayer.radar);
+                if (map.getLayer(currentLayer.radar)) {
+                    map.removeLayer(currentLayer.radar);
+                }
+                if (map.getSource(currentLayer.radar)) {
+                    map.removeSource(currentLayer.radar);
+                }
 
-                map.removeLayer(currentLayer.mask);
-                map.removeSource(currentLayer.mask);
+                if (map.getLayer(currentLayer.mask)) {
+                    map.removeLayer(currentLayer.mask);
+                }
+                if (map.getSource(currentLayer.mask)) {
+                    map.removeSource(currentLayer.mask);
+                }
             }
 
+            // 現在のレイヤー情報を更新
             currentLayer = {
-                radar: newRadarSource,
-                mask: newMaskSource
+                radar: newRadarLayerId,
+                mask: newMaskLayerId
             };
 
             // JSTに変換して表示
