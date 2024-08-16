@@ -38,17 +38,49 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
+        #crosshair-horizontal, #crosshair-vertical {
+            position: absolute;
+            background: red;
+            z-index: 10;
+        }
+        #crosshair-horizontal {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+        }
+        #crosshair-vertical {
+            width: 2px;
+            height: 100%;
+            top: 0;
+            left: 50%;
+        }
+        #centerLatLngDisplay {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 10;
+            white-space: pre-line; /* 改行を反映 */
+        }
     </style>
 </head>
 <body>
     <div id="controls">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="prev-button" class="nav-button">&lt;</button> <!-- ボタンを左に配置 -->
-            <button id="next-button" class="nav-button">&gt;</button> <!-- ボタンを右に配置 -->
+            <button id="prev-button" class="nav-button">&lt;</button>
+            <button id="next-button" class="nav-button">&gt;</button>
         </div>
     </div>
     <div id="map"></div>
+    <div id="crosshair-horizontal"></div>
+    <div id="crosshair-vertical"></div>
+    <div id="centerLatLngDisplay"></div>
     <script>
         let map;
         let currentIndex = 0;
@@ -184,43 +216,17 @@
                 map.on('load', function () {
                     updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
 
-                    // 中心に十字線を表示
-                    const crosshairSize = 20; // 十字線のサイズ
-                    const crosshair = document.createElement('div');
-                    crosshair.style.position = 'absolute';
-                    crosshair.style.top = '50%';
-                    crosshair.style.left = '50%';
-                    crosshair.style.width = `${crosshairSize}px`;
-                    crosshair.style.height = `${crosshairSize}px`;
-                    crosshair.style.background = 'none';
-                    crosshair.style.borderTop = '2px solid red';
-                    crosshair.style.borderLeft = '2px solid red';
-                    crosshair.style.transform = 'translate(-50%, -50%)';
-                    crosshair.style.zIndex = '10'; // 十字線が上に表示されるように
-                    document.body.appendChild(crosshair);
-
-                    // 中心の緯度経度を表示
-                    const centerLatLngDisplay = document.createElement('div');
-                    centerLatLngDisplay.style.position = 'absolute';
-                    centerLatLngDisplay.style.top = 'calc(50% + 20px)'; // 十字線の下に表示
-                    centerLatLngDisplay.style.left = '50%';
-                    centerLatLngDisplay.style.transform = 'translate(-50%, 0)';
-                    centerLatLngDisplay.style.padding = '5px';
-                    centerLatLngDisplay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
-                    centerLatLngDisplay.style.border = '1px solid #ccc';
-                    centerLatLngDisplay.style.borderRadius = '5px';
-                    centerLatLngDisplay.style.zIndex = '10';
-                    document.body.appendChild(centerLatLngDisplay);
-
                     // マップの移動時に中心の緯度経度を更新
                     map.on('move', function () {
                         const center = map.getCenter();
-                        centerLatLngDisplay.innerText = `緯度: ${center.lat.toFixed(5)}, 経度: ${center.lng.toFixed(5)}`;
+                        document.getElementById('centerLatLngDisplay').innerText = 
+                            `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
                     });
 
                     // 初回表示
                     const initialCenter = map.getCenter();
-                    centerLatLngDisplay.innerText = `緯度: ${initialCenter.lat.toFixed(5)}, 経度: ${initialCenter.lng.toFixed(5)}`;
+                    document.getElementById('centerLatLngDisplay').innerText = 
+                        `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
                 });
             })
             .catch(error => console.error('Error loading JSON:', error));
