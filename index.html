@@ -154,8 +154,8 @@
 
         function updateNavButtons() {
             // 未来のデータも存在するため、どちらのボタンも最初はグレーアウトしない
-            document.getElementById('prev-button').disabled = false;
-            document.getElementById('next-button').disabled = false;
+            document.getElementById('prev-button').disabled = currentIndex === 0 && pastOffset === 0;
+            document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1 && pastOffset === 0;
         }
 
         document.getElementById('prev-button').onclick = () => {
