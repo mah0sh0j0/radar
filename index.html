@@ -40,10 +40,16 @@
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
             const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
-            if (currentLayer) {
+            if (map.getLayer('jma-radar-layer')) {
                 map.removeLayer('jma-radar-layer');
+            }
+            if (map.getSource('jma-radar')) {
                 map.removeSource('jma-radar');
+            }
+            if (map.getLayer('jma-mask-layer')) {
                 map.removeLayer('jma-mask-layer');
+            }
+            if (map.getSource('jma-mask')) {
                 map.removeSource('jma-mask');
             }
 
@@ -80,7 +86,27 @@
             .then(response => response.json())
             .then(data => {
                 const basetime = data[0].basetime;
-                const validtimes = data.map(item => item.validtime);
+                const now = new Date();
+
+                // 過去のデータをフィルタリングする
+                const validtimes = data
+                    .map(item => item.validtime)
+                    .filter(validtime => {
+                        const validDate = new Date(
+                            validtime.slice(0, 4),
+                            validtime.slice(4, 6) - 1,
+                            validtime.slice(6, 8),
+                            validtime.slice(8, 10),
+                            validtime.slice(10, 12),
+                            validtime.slice(12, 14)
+                        );
+                        return validDate <= now;
+                    });
+
+                if (validtimes.length === 0) {
+                    document.getElementById('time-display').innerText = '過去のデータが見つかりませんでした';
+                    return;
+                }
 
                 // 地図の初期化
                 map = new maplibregl.Map({
