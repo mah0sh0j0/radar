@@ -153,19 +153,19 @@
         }
 
         function updateNavButtons() {
-            document.getElementById('prev-button').disabled = currentIndex === 0 && pastOffset >= 12; // 過去1時間分（12×5分）表示済み
-            document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1 && pastOffset === 0;
+            document.getElementById('prev-button').disabled = (currentIndex === 0 && pastOffset >= 12);
+            document.getElementById('next-button').disabled = (currentIndex === validtimes.length - 1 && pastOffset === 0);
         }
 
         document.getElementById('prev-button').onclick = () => {
-            if (pastOffset < 12) { // 最大で12回過去に遡る（1時間分）
+            if (pastOffset < 12) {
                 pastOffset++;
                 const pastTime = calculatePastTime(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime, pastOffset);
                 updateRadarLayer(pastTime.basetime, pastTime.validtime);
             } else if (currentIndex > 0) {
                 currentIndex--;
+                pastOffset = 0; // リセット
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
-                pastOffset = 0; // 新しいインデックスを表示したら過去オフセットをリセット
             }
         };
 
