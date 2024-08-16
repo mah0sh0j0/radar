@@ -60,11 +60,19 @@
             border-radius: 20px;
             margin: 0 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            font-size: 16px; /* ボタンのサイズを小さく調整 */
+            font-size: 16px; /* ボタンのサイズを統一 */
+        }
+        .nav-button i {
+            font-size: 16px;
         }
         .nav-button:disabled {
             background-color: #d3d3d3;
             cursor: not-allowed;
+        }
+        #toggle-visibility {
+            font-size: 14px; /* 文字サイズを一回り小さく */
+            padding: 5px 8px;
+            height: 32px; /* 他のボタンと高さを揃える */
         }
         #crosshair-horizontal, #crosshair-vertical {
             position: absolute;
@@ -122,9 +130,9 @@
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
             <button id="play-button" class="nav-button"><i class="fas fa-play"></i></button> <!-- FontAwesomeのアイコンに変更 -->
-            <button id="prev-button" class="nav-button">&lt;</button>
+            <button id="prev-button" class="nav-button"><i class="fas fa-chevron-left"></i></button> <!-- FontAwesomeのアイコンに変更 -->
             <input type="range" id="slider" min="0" max="36" step="1" value="36">
-            <button id="next-button" class="nav-button">&gt;</button>
+            <button id="next-button" class="nav-button"><i class="fas fa-chevron-right"></i></button> <!-- FontAwesomeのアイコンに変更 -->
             <button id="toggle-visibility" class="nav-button">経緯度</button>
         </div>
     </div>
@@ -325,18 +333,18 @@
                         },
                         layers: [
                             {
-                                id: 'jma-mask-layer',
-                                type: 'raster',
-                                source: 'jma-mask',
-                                minzoom: 0,
-                                maxzoom: 10
-                            },
-                            {
                                 id: 'usgs-layer',
                                 type: 'raster',
                                 source: 'usgs',
                                 minzoom: 0,
                                 maxzoom: 19
+                            },
+                            {
+                                id: 'jma-mask-layer',
+                                type: 'raster',
+                                source: 'jma-mask',
+                                minzoom: 0,
+                                maxzoom: 10
                             }
                         ]
                     },
