@@ -75,7 +75,7 @@
     <div id="controls">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="prev-button" class="nav-button">&lt;</button>
+            <button id="prev-button" class="nav-button" disabled>&lt;</button>
             <button id="next-button" class="nav-button">&gt;</button>
         </div>
     </div>
@@ -183,7 +183,7 @@
                     return;
                 }
 
-                currentIndex = 0; // 初期化時に一番新しいデータを表示
+                currentIndex = validtimes.length - 1; // 最新のデータを表示する
 
                 // ここで map を初期化
                 map = new maplibregl.Map({
