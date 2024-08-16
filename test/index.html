@@ -239,7 +239,7 @@ function updateRadarLayer(basetime, validtime) {
     // 現在時刻を取得
     const now = new Date();
 
-    // UTC時間で5分刻みの最近の過去時刻を計算
+    // 5分単位で最も近い過去の時刻を計算
     const roundedMinutes = Math.floor(now.getUTCMinutes() / 5) * 5;
     const roundedTime = new Date(Date.UTC(
         now.getUTCFullYear(),
@@ -310,6 +310,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
