@@ -14,7 +14,6 @@
 <body>
     <div id="map"></div>
     <script>
-        // MapLibreの初期設定
         const map = new maplibregl.Map({
             container: 'map',
             style: {
@@ -40,27 +39,26 @@
                 ]
             },
             center: [139.6917, 35.6895], // 東京の中心
-            zoom: 6 // 初期ズームレベル
+            zoom: 6
         });
 
-        // JMAのJSONからbasetimeとvalidtimeを取得してレーダー画像を表示
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
                 console.log("Fetched Data: ", data);  // JSONデータを確認
 
                 const basetime = data[0].basetime;
-                const validtimeObject = data[0].validtime; // validtime配列を取得
+                const validtime = data[0].validtime; // validtime配列を取得
 
-                // 配列内の最初のオブジェクトからvalidtimeを取得
-                const firstValidtime = validtimeObject[0];
+                // validtimeが配列の中に直接あることを確認し、データ構造に合わせて修正
+                const firstValidtime = data[0].validtime;
 
-                console.log("basetime: ", basetime);  // basetimeの確認
-                console.log("firstValidtime: ", firstValidtime);  // firstValidtimeの確認
+                console.log("basetime: ", basetime);
+                console.log("firstValidtime: ", firstValidtime);
 
                 const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${firstValidtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
-                console.log("Generated Tile URL: ", tileUrl);  // 生成されたURLを確認
+                console.log("Generated Tile URL: ", tileUrl);
 
                 map.on('load', function () {
                     map.addSource('jma-radar', {
