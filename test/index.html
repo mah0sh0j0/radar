@@ -248,13 +248,9 @@ function updateRadarLayer(basetime, validtime) {
         parseInt(validtime.slice(10, 12))
     );
 
-    // 現在時刻が有効時刻の1分以上後でなければ、前回のデータを表示
+    // 現在時刻が有効時刻を1分以上経過していない場合はデータを表示しない
     if (now.getTime() < validDateUTC.getTime() + 60000) {
-        // 前回のデータ（5分前のデータ）を表示
-        const previousValidTime = new Date(validDateUTC.getTime() - 5 * 60 * 1000);
-        validtime = `${previousValidTime.getUTCFullYear()}${(previousValidTime.getUTCMonth() + 1).toString().padStart(2, '0')}${previousValidTime.getUTCDate().toString().padStart(2, '0')}${previousValidTime.getUTCHours().toString().padStart(2, '0')}${previousValidTime.getUTCMinutes().toString().padStart(2, '0')}`;
-    } else if (now.getTime() < validDateUTC.getTime()) {
-        // 現在時刻が有効時刻を超えていない場合、何も表示しない
+        // 未来のデータを表示しない
         return;
     }
 
@@ -310,6 +306,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
         function updateNavButtons() {
