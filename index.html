@@ -91,7 +91,7 @@
         let pastOffset = 0; // 過去に遡る際のオフセット（5分刻み）
 
         function updateRadarLayer(basetime, validtime) {
-            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}00/surf/hrpns/{z}/{x}/{y}.png`;
+            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
             const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
             const newRadarLayerId = `jma-radar-${Date.now()}`;
@@ -173,8 +173,8 @@
         document.getElementById('next-button').onclick = () => {
             if (pastOffset > 0) {
                 pastOffset--;
-                const futureTime = calculatePastTime(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime, pastOffset);
-                updateRadarLayer(futureTime.basetime, futureTime.validtime);
+                const futureTime = calculateFutureTime(validtimes[currentIndex].basetime, pastOffset);
+                updateRadarLayer(validtimes[currentIndex].basetime, futureTime.validtime);
             } else if (currentIndex < validtimes.length - 1) {
                 currentIndex++;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
@@ -198,10 +198,32 @@
             const hours = date.getHours().toString().padStart(2, '0');
             const minutes = date.getMinutes().toString().padStart(2, '0');
 
-            const pastBaseTime = `${year}${month}${day}${hours}${minutes}`;
+            const pastBaseTime = `${year}${month}${day}${hours}${minutes}00`;
             const pastValidTime = pastBaseTime;
 
             return { basetime: pastBaseTime, validtime: pastValidTime };
+        }
+
+        function calculateFutureTime(basetime, offset) {
+            // 5分ごとの時刻計算を60進法に対応させる
+            const date = new Date(
+                parseInt(basetime.slice(0, 4)),
+                parseInt(basetime.slice(4, 6)) - 1,
+                parseInt(basetime.slice(6, 8)),
+                parseInt(basetime.slice(8, 10)),
+                parseInt(basetime.slice(10, 12))
+            );
+            date.setMinutes(date.getMinutes() + offset * 5);
+
+            const year = date.getFullYear().toString().padStart(4, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+
+            const futureValidTime = `${year}${month}${day}${hours}${minutes}00`;
+
+            return { validtime: futureValidTime };
         }
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
