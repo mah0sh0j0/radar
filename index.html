@@ -139,24 +139,13 @@
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
-                const now = new Date();
-                const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-
-                validtimes = data
-                    .map(item => ({ basetime: item.basetime, validtime: item.validtime }))
-                    .filter(item => {
-                        const validDate = new Date(
-                            item.validtime.slice(0, 4),
-                            item.validtime.slice(4, 6) - 1,
-                            item.validtime.slice(6, 8),
-                            item.validtime.slice(8, 10),
-                            item.validtime.slice(10, 12)
-                        );
-                        return validDate >= threeHoursAgo && validDate <= now;
-                    });
+                validtimes = data.map(item => ({
+                    basetime: item.basetime,
+                    validtime: item.validtime
+                }));
 
                 if (validtimes.length === 0) {
-                    document.getElementById('time-display').innerText = '過去のデータが見つかりませんでした';
+                    document.getElementById('time-display').innerText = 'データが見つかりませんでした';
                     return;
                 }
 
