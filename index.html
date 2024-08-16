@@ -44,16 +44,18 @@
             z-index: 10;
         }
         #crosshair-horizontal {
-            width: 100%;
+            width: 50px; /* 十字線の水平線の長さ */
             height: 2px;
             top: 50%;
-            left: 0;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
         #crosshair-vertical {
             width: 2px;
-            height: 100%;
-            top: 0;
+            height: 50px; /* 十字線の垂直線の長さ */
+            top: 50%;
             left: 50%;
+            transform: translate(-50%, -50%);
         }
         #centerLatLngDisplay {
             position: absolute;
