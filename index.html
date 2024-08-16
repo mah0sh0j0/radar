@@ -19,8 +19,25 @@
             container: 'map',
             style: {
                 version: 8,
-                sources: {},
-                layers: []
+                sources: {
+                    'usgs': {
+                        type: 'raster',
+                        tiles: [
+                            'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+                        ],
+                        tileSize: 256,
+                        maxzoom: 19
+                    }
+                },
+                layers: [
+                    {
+                        id: 'usgs-layer',
+                        type: 'raster',
+                        source: 'usgs',
+                        minzoom: 0,
+                        maxzoom: 19
+                    }
+                ]
             },
             center: [139.6917, 35.6895], // 東京の中心
             zoom: 6 // 初期ズームレベル
