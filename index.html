@@ -86,6 +86,17 @@
             margin: 0 10px;
             background-color: #a7c7e7; /* パステルブルー */
         }
+        #attribution {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8em;
+            color: #666666;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 2px 5px;
+            border-radius: 3px;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -102,6 +113,7 @@
     <div id="crosshair-horizontal"></div>
     <div id="crosshair-vertical"></div>
     <div id="centerLatLngDisplay"></div>
+    <div id="attribution">気象庁/USGS</div> <!-- 出典を追加 -->
     <script>
         let map;
         let currentIndex = 36; // 最新のデータは36
