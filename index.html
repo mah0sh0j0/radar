@@ -161,11 +161,10 @@ function updateRadarLayer(basetime, validtime) {
     }
 
     const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
-    const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
     const newRadarLayerId = `jma-radar-${Date.now()}`;
-    const newMaskLayerId = `jma-mask-${Date.now()}`;
 
+    // レーダーレイヤーを再読み込み
     map.addSource(newRadarLayerId, {
         type: 'raster',
         tiles: [tileUrl],
@@ -179,20 +178,29 @@ function updateRadarLayer(basetime, validtime) {
         source: newRadarLayerId
     });
 
-    map.addSource(newMaskLayerId, {
-        type: 'raster',
-        tiles: [maskUrl],
-        tileSize: 256,
-        maxzoom: 10
-    });
+    // マスクレイヤーは最初の読み込み後に再読み込みしない
+    if (!currentLayer) {
+        const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
+        const newMaskLayerId = `jma-mask`;
 
-    map.addLayer({
-        id: newMaskLayerId,
-        type: 'raster',
-        source: newMaskLayerId
-    });
+        map.addSource(newMaskLayerId, {
+            type: 'raster',
+            tiles: [maskUrl],
+            tileSize: 256,
+            maxzoom: 10
+        });
 
-    if (currentLayer) {
+        map.addLayer({
+            id: newMaskLayerId,
+            type: 'raster',
+            source: newMaskLayerId
+        });
+
+        currentLayer = {
+            radar: newRadarLayerId,
+            mask: newMaskLayerId
+        };
+    } else {
         if (map.getLayer(currentLayer.radar)) {
             map.removeLayer(currentLayer.radar);
         }
@@ -200,18 +208,8 @@ function updateRadarLayer(basetime, validtime) {
             map.removeSource(currentLayer.radar);
         }
 
-        if (map.getLayer(currentLayer.mask)) {
-            map.removeLayer(currentLayer.mask);
-        }
-        if (map.getSource(currentLayer.mask)) {
-            map.removeSource(currentLayer.mask);
-        }
+        currentLayer.radar = newRadarLayerId;
     }
-
-    currentLayer = {
-        radar: newRadarLayerId,
-        mask: newMaskLayerId
-    };
 
     const validDateUTC = new Date(
         parseInt(validtime.slice(0, 4)),
@@ -225,6 +223,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
