@@ -44,8 +44,8 @@
     <div id="controls">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="next-button" class="nav-button">&lt;</button>
-            <button id="prev-button" class="nav-button">&gt;</button>
+            <button id="prev-button" class="nav-button">&lt;</button>
+            <button id="next-button" class="nav-button">&gt;</button>
         </div>
     </div>
     <div id="map"></div>
@@ -118,20 +118,20 @@
         }
 
         function updateNavButtons() {
-            document.getElementById('prev-button').disabled = currentIndex === validtimes.length - 1;
-            document.getElementById('next-button').disabled = currentIndex === 0;
+            document.getElementById('prev-button').disabled = currentIndex === 0;
+            document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1;
         }
 
         document.getElementById('prev-button').onclick = () => {
-            if (currentIndex < validtimes.length - 1) {
-                currentIndex++;
+            if (currentIndex > 0) {
+                currentIndex--;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
         };
 
         document.getElementById('next-button').onclick = () => {
-            if (currentIndex > 0) {
-                currentIndex--;
+            if (currentIndex < validtimes.length - 1) {
+                currentIndex++;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
         };
