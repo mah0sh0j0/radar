@@ -44,8 +44,8 @@
     <div id="controls">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="next-button" class="nav-button">&gt;</button>
-            <button id="prev-button" class="nav-button">&lt;</button>
+            <button id="prev-button" class="nav-button">&lt;</button> <!-- ボタンを左に配置 -->
+            <button id="next-button" class="nav-button">&gt;</button> <!-- ボタンを右に配置 -->
         </div>
     </div>
     <div id="map"></div>
@@ -142,7 +142,6 @@
             const zoom = map.getZoom();
             let latStep, lonStep;
 
-            // ズームレベルに応じてステップサイズを決定
             if (zoom < 9) {
                 latStep = lonStep = 1.0;
             } else {
@@ -154,14 +153,13 @@
             const minLon = Math.floor(bounds.getSouthWest().lng / lonStep) * lonStep;
             const maxLon = Math.ceil(bounds.getNorthEast().lng / lonStep) * lonStep;
 
-            // 表示範囲の50％の領域にポイントを表示
             const latRange = (maxLat - minLat) * 0.5;
             const lonRange = (maxLon - minLon) * 0.5;
 
             for (let lat = center.lat - latRange / 2; lat <= center.lat + latRange / 2; lat += latStep) {
                 for (let lon = center.lng - lonRange / 2; lon <= center.lng + lonRange / 2; lon += lonStep) {
                     const pointId = `point-${lat}-${lon}`;
-                    if (map.getLayer(pointId)) continue; // 既にポイントがある場合はスキップ
+                    if (map.getLayer(pointId)) continue;
 
                     map.addLayer({
                         id: pointId,
@@ -185,7 +183,6 @@
                         }
                     });
 
-                    // ポイントクリック時のポップアップ
                     map.on('click', pointId, function (e) {
                         new maplibregl.Popup()
                             .setLngLat(e.lngLat)
@@ -244,9 +241,9 @@
                     addPointsToMap();
                 });
 
-                map.on('moveend', function () {
-                    addPointsToMap(); // 地図の移動後にポイントを再表示
-                });
+                // map.on('moveend', function () {
+                //     addPointsToMap(); // 地図の移動後にポイントを再表示
+                // });
             })
             .catch(error => console.error('Error loading JSON:', error));
     </script>
