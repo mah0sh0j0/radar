@@ -239,11 +239,14 @@ function updateRadarLayer(basetime, validtime) {
     // 現在時刻を取得
     const now = new Date();
 
+    // JST（日本標準時）に変換
+    const nowJST = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+
     // 5分単位で最も近い過去の時刻を計算
-    const nearestPastTime = new Date(Math.floor(now.getTime() / (5 * 60 * 1000)) * (5 * 60 * 1000));
+    const nearestPastTime = new Date(Math.floor(nowJST.getTime() / (5 * 60 * 1000)) * (5 * 60 * 1000));
     nearestPastTime.setSeconds(0, 0);
 
-    const validDateUTC = nearestPastTime;
+    const validDateUTC = new Date(nearestPastTime.getTime() - 9 * 60 * 60 * 1000);
 
     // validtimeを新たに設定
     validtime = `${validDateUTC.getUTCFullYear()}${(validDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}${validDateUTC.getUTCDate().toString().padStart(2, '0')}${validDateUTC.getUTCHours().toString().padStart(2, '0')}${validDateUTC.getUTCMinutes().toString().padStart(2, '0')}`;
@@ -295,11 +298,11 @@ function updateRadarLayer(basetime, validtime) {
         currentLayers = [newRadarLayerId];
     });
 
-    const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
+    const formattedDate = `${nearestPastTime.getFullYear()}年${(nearestPastTime.getMonth() + 1).toString().padStart(2, '0')}月${nearestPastTime.getDate().toString().padStart(2, '0')}日${nearestPastTime.getHours().toString().padStart(2, '0')}時${nearestPastTime.getMinutes().toString().padStart(2, '0')}分`;
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
