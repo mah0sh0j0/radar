@@ -239,20 +239,22 @@ function updateRadarLayer(basetime, validtime) {
     // 現在時刻を取得
     const now = new Date();
 
-    // 5分単位で最も近い過去の時刻を計算
-    const nearestPastTime = new Date(Math.floor(now.getTime() / (5 * 60 * 1000)) * (5 * 60 * 1000));
-    nearestPastTime.setSeconds(0, 0);
+    // validtimeをUTCとして解析
+    const validDateUTC = new Date(
+        parseInt(validtime.slice(0, 4)),
+        parseInt(validtime.slice(4, 6)) - 1,
+        parseInt(validtime.slice(6, 8)),
+        parseInt(validtime.slice(8, 10)),
+        parseInt(validtime.slice(10, 12))
+    );
 
-    // basetimeをフォーマット
-    const baseDate = new Date(now.getTime());
-    const formattedBaseTime = `${baseDate.getUTCFullYear()}${(baseDate.getUTCMonth() + 1).toString().padStart(2, '0')}${baseDate.getUTCDate().toString().padStart(2, '0')}${baseDate.getUTCHours().toString().padStart(2, '0')}${baseDate.getUTCMinutes().toString().padStart(2, '0')}00`;
+    // 現在時刻が有効時刻を1分以上経過していない場合はデータを表示しない
+    if (now.getTime() < validDateUTC.getTime() + 60000) {
+        // 未来のデータを表示しない
+        return;
+    }
 
-    const validDateUTC = nearestPastTime;
-
-    // validtimeを新たに設定
-    validtime = `${validDateUTC.getUTCFullYear()}${(validDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}${validDateUTC.getUTCDate().toString().padStart(2, '0')}${validDateUTC.getUTCHours().toString().padStart(2, '0')}${validDateUTC.getUTCMinutes().toString().padStart(2, '0')}`;
-
-    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${formattedBaseTime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
     const newRadarLayerId = `jma-radar-${Date.now()}`;
 
@@ -299,10 +301,12 @@ function updateRadarLayer(basetime, validtime) {
         currentLayers = [newRadarLayerId];
     });
 
-    const formattedDate = `${nearestPastTime.getFullYear()}年${(nearestPastTime.getMonth() + 1).toString().padStart(2, '0')}月${nearestPastTime.getDate().toString().padStart(2, '0')}日${nearestPastTime.getHours().toString().padStart(2, '0')}時${nearestPastTime.getMinutes().toString().padStart(2, '0')}分`;
+    const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
