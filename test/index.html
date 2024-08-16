@@ -272,6 +272,9 @@
             } else {
                 isPlaying = true;
                 document.getElementById('play-button').innerText = '⏸'; // Pause symbol
+                currentIndex = 0; // 再生開始時に最初に戻す
+                slider.value = currentIndex;
+                updateSlider();
                 playInterval = setInterval(() => {
                     if (currentIndex < maxOffset) {
                         currentIndex++;
@@ -279,9 +282,9 @@
                         updateSlider();
                         updateNavButtons();
                     } else {
-                        clearInterval(playInterval);
-                        isPlaying = false;
-                        document.getElementById('play-button').innerText = '▶︎';
+                        currentIndex = 0; // ループ再生するためにインデックスをリセット
+                        slider.value = currentIndex;
+                        updateSlider();
                     }
                 }, 500); // 0.5秒間隔で進む
             }
