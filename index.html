@@ -26,8 +26,6 @@
 <body>
     <div id="controls">
         <div id="time-display">Loading...</div>
-        <button id="prev">Previous</button>
-        <button id="next">Next</button>
     </div>
     <div id="map"></div>
     <script>
@@ -60,11 +58,11 @@
                     }
                 ]
             },
-            center: [139.6917, 35.6895], // 東京の中心
-            zoom: 6 // 初期ズームレベル
+            center: [139.6917, 35.6895],
+            zoom: 6
         });
 
-        // JSONからbasetimeとvalidtimeを取得
+        // JMAのJSONからbasetimeとvalidtimeを取得
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
@@ -72,26 +70,6 @@
                 updateRadarLayer();
             })
             .catch(error => console.error('Error loading JSON:', error));
-
-        document.getElementById('prev').addEventListener('click', () => {
-            if (validtimeIndex > 0) {
-                validtimeIndex--;
-            } else if (basetimeIndex > 0) {
-                basetimeIndex--;
-                validtimeIndex = targetTimes[basetimeIndex].validtime.length - 1;
-            }
-            updateRadarLayer();
-        });
-
-        document.getElementById('next').addEventListener('click', () => {
-            if (validtimeIndex < targetTimes[basetimeIndex].validtime.length - 1) {
-                validtimeIndex++;
-            } else if (basetimeIndex < targetTimes.length - 1) {
-                basetimeIndex++;
-                validtimeIndex = 0;
-            }
-            updateRadarLayer();
-        });
 
         function updateRadarLayer() {
             const basetime = targetTimes[basetimeIndex].basetime;
