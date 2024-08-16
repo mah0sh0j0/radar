@@ -138,13 +138,28 @@
 
         function addPointsToMap() {
             const bounds = map.getBounds();
-            const minLat = Math.floor(bounds.getSouthWest().lat * 10) / 10;
-            const maxLat = Math.ceil(bounds.getNorthEast().lat * 10) / 10;
-            const minLon = Math.floor(bounds.getSouthWest().lng * 10) / 10;
-            const maxLon = Math.ceil(bounds.getNorthEast().lng * 10) / 10;
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+            let latStep, lonStep;
 
-            for (let lat = minLat; lat <= maxLat; lat += 0.1) {
-                for (let lon = minLon; lon <= maxLon; lon += 0.1) {
+            // ズームレベルに応じてステップサイズを決定
+            if (zoom < 9) {
+                latStep = lonStep = 1.0;
+            } else {
+                latStep = lonStep = 0.1;
+            }
+
+            const minLat = Math.floor(bounds.getSouthWest().lat / latStep) * latStep;
+            const maxLat = Math.ceil(bounds.getNorthEast().lat / latStep) * latStep;
+            const minLon = Math.floor(bounds.getSouthWest().lng / lonStep) * lonStep;
+            const maxLon = Math.ceil(bounds.getNorthEast().lng / lonStep) * lonStep;
+
+            // 表示範囲の50％の領域にポイントを表示
+            const latRange = (maxLat - minLat) * 0.5;
+            const lonRange = (maxLon - minLon) * 0.5;
+
+            for (let lat = center.lat - latRange / 2; lat <= center.lat + latRange / 2; lat += latStep) {
+                for (let lon = center.lng - lonRange / 2; lon <= center.lng + lonRange / 2; lon += lonStep) {
                     const pointId = `point-${lat}-${lon}`;
                     if (map.getLayer(pointId)) continue; // 既にポイントがある場合はスキップ
 
@@ -163,7 +178,10 @@
                         },
                         paint: {
                             'circle-radius': 4,
-                            'circle-color': '#FF0000'
+                            'circle-color': '#FFFFFF',
+                            'circle-stroke-width': 2,
+                            'circle-stroke-color': '#000000',
+                            'circle-blur': 0.5
                         }
                     });
 
