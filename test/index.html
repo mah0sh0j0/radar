@@ -236,9 +236,6 @@
 function updateRadarLayer(basetime, validtime) {
     if (!map) return;
 
-    // 現在のUTC時刻を取得
-    const now = new Date();
-
     // validtimeをUTCとして解析
     let validDateUTC = new Date(
         parseInt(validtime.slice(0, 4)),
@@ -246,20 +243,16 @@ function updateRadarLayer(basetime, validtime) {
         parseInt(validtime.slice(6, 8)),
         parseInt(validtime.slice(8, 10)),
         parseInt(validtime.slice(10, 12)),
-        0 // 秒とミリ秒をゼロに設定
+        0
     );
 
-    // 現在時刻が有効時刻の1分以上後でなければ、5分前のデータを使用
-    if (now.getTime() <= validDateUTC.getTime() + 60000) {
-        // 5分前のデータにシフト
-        validDateUTC.setMinutes(validDateUTC.getMinutes() - 5);
-        validtime = `${validDateUTC.getUTCFullYear()}${(validDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}${validDateUTC.getUTCDate().toString().padStart(2, '0')}${validDateUTC.getUTCHours().toString().padStart(2, '0')}${validDateUTC.getUTCMinutes().toString().padStart(2, '0')}00`;
-    }
+    // 常に5分前のデータを使用
+    validDateUTC.setMinutes(validDateUTC.getMinutes() - 5);
+    validtime = `${validDateUTC.getUTCFullYear()}${(validDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}${validDateUTC.getUTCDate().toString().padStart(2, '0')}${validDateUTC.getUTCHours().toString().padStart(2, '0')}${validDateUTC.getUTCMinutes().toString().padStart(2, '0')}00`;
 
     // タイルURLを生成
     const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
-    // 新しいレイヤーIDを生成
     const newRadarLayerId = `jma-radar-${Date.now()}`;
 
     // 新しいレイヤーを追加
@@ -308,7 +301,6 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
-
 
 
 
