@@ -135,7 +135,7 @@
         let map;
         let currentIndex = 36; // 最新のデータは36
         let validtimes = [];
-        let currentLayer = null;
+        let currentLayers = []; // 複数のレイヤーを追跡するための配列に変更
         let maxOffset = 36; // 最大で36（3時間前）まで
         let slider = document.getElementById('slider');
         let visibility = true;
@@ -172,17 +172,17 @@
             });
 
             // 古いレイヤーを一定時間後に削除
-            if (currentLayer && map.getLayer(currentLayer.radar)) {
-                setTimeout(() => {
-                    map.removeLayer(currentLayer.radar);
-                    map.removeSource(currentLayer.radar);
-                }, 500); // 新しいレイヤーが完全にフェードインした後に削除
-            }
+            currentLayers.forEach(layerId => {
+                if (map.getLayer(layerId)) {
+                    map.removeLayer(layerId);
+                }
+                if (map.getSource(layerId)) {
+                    map.removeSource(layerId);
+                }
+            });
 
             // 現在のレイヤーを更新
-            currentLayer = {
-                radar: newRadarLayerId
-            };
+            currentLayers = [newRadarLayerId]; // 新しいレイヤーIDを配列に保存
 
             const validDateUTC = new Date(
                 parseInt(validtime.slice(0, 4)),
@@ -245,7 +245,7 @@
                 document.getElementById('play-button').innerText = '▶︎';
             } else {
                 isPlaying = true;
-                document.getElementById('play-button').innerText = '‖'; // 並列記号を使用
+                document.getElementById('play-button').innerText = '| |'; // 並列記号を使用
                 currentIndex = maxOffset; // 再生開始時に最新の画像を表示する
                 slider.value = currentIndex;
                 updateSlider();
