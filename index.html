@@ -136,62 +136,66 @@
             }
         };
 
-        function addPointsToMap() {
-            const bounds = map.getBounds();
-            const center = map.getCenter();
-            const zoom = map.getZoom();
-            let latStep, lonStep;
+function addPointsToMap() {
+    const bounds = map.getBounds();
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    
+    // ズームレベルに応じてステップサイズを決定
+    if (zoom < 9) {
+        return; // ズームレベルが9未満の場合はポイントを表示しない
+    }
 
-            if (zoom < 9) {
-                latStep = lonStep = 0.1;
-            } else {
-                latStep = lonStep = 0.1;
-            }
+    const latStep = 0.1;
+    const lonStep = 0.1;
 
-            const minLat = Math.floor(bounds.getSouthWest().lat / latStep) * latStep;
-            const maxLat = Math.ceil(bounds.getNorthEast().lat / latStep) * latStep;
-            const minLon = Math.floor(bounds.getSouthWest().lng / lonStep) * lonStep;
-            const maxLon = Math.ceil(bounds.getNorthEast().lng / lonStep) * lonStep;
+    const minLat = Math.floor(bounds.getSouthWest().lat / latStep) * latStep;
+    const maxLat = Math.ceil(bounds.getNorthEast().lat / latStep) * latStep;
+    const minLon = Math.floor(bounds.getSouthWest().lng / lonStep) * lonStep;
+    const maxLon = Math.ceil(bounds.getNorthEast().lng / lonStep) * lonStep;
 
-            const latRange = (maxLat - minLat) * 0.5;
-            const lonRange = (maxLon - minLon) * 0.5;
+    // 表示範囲の50％の領域にポイントを表示
+    const latRange = (maxLat - minLat) * 0.5;
+    const lonRange = (maxLon - minLon) * 0.5;
 
-            for (let lat = center.lat - latRange / 2; lat <= center.lat + latRange / 2; lat += latStep) {
-                for (let lon = center.lng - lonRange / 2; lon <= center.lng + lonRange / 2; lon += lonStep) {
-                    const pointId = `point-${lat}-${lon}`;
-                    if (map.getLayer(pointId)) continue;
+    for (let lat = center.lat - latRange / 2; lat <= center.lat + latRange / 2; lat += latStep) {
+        for (let lon = center.lng - lonRange / 2; lon <= center.lng + lonRange / 2; lon += lonStep) {
+            const pointId = `point-${lat}-${lon}`;
+            if (map.getLayer(pointId)) continue; // 既にポイントがある場合はスキップ
 
-                    map.addLayer({
-                        id: pointId,
-                        type: 'circle',
-                        source: {
-                            type: 'geojson',
-                            data: {
-                                type: 'Feature',
-                                geometry: {
-                                    type: 'Point',
-                                    coordinates: [lon, lat]
-                                }
-                            }
-                        },
-                        paint: {
-                            'circle-radius': 4,
-                            'circle-color': '#FFFFFF',
-                            'circle-stroke-width': 2,
-                            'circle-stroke-color': '#000000',
-                            'circle-blur': 0.5
+            map.addLayer({
+                id: pointId,
+                type: 'circle',
+                source: {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [lon, lat]
                         }
-                    });
-
-                    map.on('click', pointId, function (e) {
-                        new maplibregl.Popup()
-                            .setLngLat(e.lngLat)
-                            .setHTML(`<strong>緯度:</strong> ${lat}<br><strong>経度:</strong> ${lon}`)
-                            .addTo(map);
-                    });
+                    }
+                },
+                paint: {
+                    'circle-radius': 4,
+                    'circle-color': '#FFFFFF',
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#000000',
+                    'circle-blur': 0.5
                 }
-            }
+            });
+
+            // ポイントクリック時のポップアップ
+            map.on('click', pointId, function (e) {
+                new maplibregl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(`<strong>緯度:</strong> ${lat}<br><strong>経度:</strong> ${lon}`)
+                    .addTo(map);
+            });
         }
+    }
+}
+
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
