@@ -73,6 +73,13 @@
             width: 100%;
             margin-top: 10px;
         }
+        .fade-layer {
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+        .fade-layer.visible {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -93,11 +100,12 @@
         let currentIndex = 36; // 最新のデータは36
         let validtimes = [];
         let currentLayer = null;
+        let previousLayer = null;
         let maxOffset = 36; // 最大で36（3時間前）まで
         let slider = document.getElementById('slider');
 
         function updateRadarLayer(basetime, validtime) {
-            if (!map) return; // mapがまだ初期化されていない場合は何もしない
+            if (!map) return;
 
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
             const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
@@ -109,48 +117,60 @@
                 type: 'raster',
                 tiles: [tileUrl],
                 tileSize: 256,
-                maxzoom: 18
+                maxzoom: 10
             });
 
             map.addLayer({
                 id: newRadarLayerId,
                 type: 'raster',
-                source: newRadarLayerId
+                source: newRadarLayerId,
+                paint: {
+                    'raster-opacity': 0
+                }
             });
 
             map.addSource(newMaskLayerId, {
                 type: 'raster',
                 tiles: [maskUrl],
                 tileSize: 256,
-                maxzoom: 18
+                maxzoom: 10
             });
 
             map.addLayer({
                 id: newMaskLayerId,
                 type: 'raster',
-                source: newMaskLayerId
+                source: newMaskLayerId,
+                paint: {
+                    'raster-opacity': 0
+                }
             });
 
-            if (currentLayer) {
-                if (map.getLayer(currentLayer.radar)) {
-                    map.removeLayer(currentLayer.radar);
-                }
-                if (map.getSource(currentLayer.radar)) {
-                    map.removeSource(currentLayer.radar);
-                }
+            if (previousLayer) {
+                // 以前のレイヤーをフェードアウトさせる
+                map.setPaintProperty(previousLayer.radar, 'raster-opacity', 0);
+                map.setPaintProperty(previousLayer.mask, 'raster-opacity', 0);
 
-                if (map.getLayer(currentLayer.mask)) {
-                    map.removeLayer(currentLayer.mask);
-                }
-                if (map.getSource(currentLayer.mask)) {
-                    map.removeSource(currentLayer.mask);
-                }
+                // レイヤー削除を少し遅らせて、フェードアウトが終わった後に行う
+                setTimeout(() => {
+                    map.removeLayer(previousLayer.radar);
+                    map.removeSource(previousLayer.radar);
+                    map.removeLayer(previousLayer.mask);
+                    map.removeSource(previousLayer.mask);
+                }, 500);
             }
 
             currentLayer = {
                 radar: newRadarLayerId,
                 mask: newMaskLayerId
             };
+
+            // 新しいレイヤーをフェードインさせる
+            setTimeout(() => {
+                map.setPaintProperty(currentLayer.radar, 'raster-opacity', 1);
+                map.setPaintProperty(currentLayer.mask, 'raster-opacity', 1);
+            }, 50);
+
+            previousLayer = currentLayer;
 
             const validDateUTC = new Date(
                 parseInt(validtime.slice(0, 4)),
@@ -245,7 +265,7 @@
                                     'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
                                 ],
                                 tileSize: 256,
-                                maxzoom: 16
+                                maxzoom: 19
                             }
                         },
                         layers: [
@@ -254,7 +274,7 @@
                                 type: 'raster',
                                 source: 'usgs',
                                 minzoom: 0,
-                                maxzoom: 16
+                                maxzoom: 19
                             }
                         ]
                     },
