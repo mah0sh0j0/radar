@@ -144,14 +144,16 @@
                 mask: newMaskLayerId
             };
 
-            // validtime を使って正確な時刻を表示する
-            const year = validtime.slice(0, 4);
-            const month = validtime.slice(4, 6);
-            const day = validtime.slice(6, 8);
-            const hour = validtime.slice(8, 10);
-            const minute = validtime.slice(10, 12);
-
-            const formattedDate = `${year}年${month}月${day}日${hour}時${minute}分`;
+            // validtime を JST に変換して表示
+            const validDateUTC = new Date(
+                parseInt(validtime.slice(0, 4)),
+                parseInt(validtime.slice(4, 6)) - 1,
+                parseInt(validtime.slice(6, 8)),
+                parseInt(validtime.slice(8, 10)),
+                parseInt(validtime.slice(10, 12))
+            );
+            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+            const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
 
             document.getElementById('time-display').innerText = formattedDate;
             updateNavButtons();
@@ -162,7 +164,7 @@
             const isAtLastData = currentIndex === validtimes.length - 1 && pastOffset === 0;
 
             document.getElementById('prev-button').disabled = isAtFirstData;
-            document.getElementById('next-button').disabled = isAtLastData && pastOffset === 0;
+            document.getElementById('next-button').disabled = isAtLastData;
         }
 
         document.getElementById('prev-button').onclick = () => {
@@ -182,7 +184,7 @@
                 pastOffset--;
                 const futureTime = calculateFutureTime(validtimes[currentIndex].basetime, pastOffset);
                 updateRadarLayer(validtimes[currentIndex].basetime, futureTime.validtime);
-            } else if (currentIndex < validtimes.length - 1) {
+            } else if (currentIndex < validtimes.length - 1 || pastOffset > 0) {
                 currentIndex++;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
@@ -228,7 +230,7 @@
 
             const futureValidTime = `${year}${month}${day}${hours}${minutes}00`;
 
-            return { validtime: futureValidTime };
+            return { basetime: basetime, validtime: futureValidTime };
         }
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
