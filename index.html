@@ -75,7 +75,7 @@
     <div id="controls">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="prev-button" class="nav-button" disabled>&lt;</button>
+            <button id="prev-button" class="nav-button">&lt;</button>
             <button id="next-button" class="nav-button">&gt;</button>
         </div>
     </div>
@@ -88,6 +88,7 @@
         let currentIndex = 0;
         let validtimes = [];
         let currentLayer = null;
+        let pastOffset = 0; // 過去に遡る際のオフセット（5分刻み）
 
         function updateRadarLayer(basetime, validtime) {
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
@@ -152,23 +153,38 @@
         }
 
         function updateNavButtons() {
-            document.getElementById('prev-button').disabled = currentIndex === 0;
-            document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1;
+            document.getElementById('prev-button').disabled = currentIndex === 0 && pastOffset >= 12; // 過去1時間分（12×5分）表示済み
+            document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1 && pastOffset === 0;
         }
 
         document.getElementById('prev-button').onclick = () => {
-            if (currentIndex > 0) {
+            if (pastOffset < 12) { // 最大で12回過去に遡る（1時間分）
+                pastOffset++;
+                const pastTime = calculatePastTime(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime, pastOffset);
+                updateRadarLayer(pastTime.basetime, pastTime.validtime);
+            } else if (currentIndex > 0) {
                 currentIndex--;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
+                pastOffset = 0; // 新しいインデックスを表示したら過去オフセットをリセット
             }
         };
 
         document.getElementById('next-button').onclick = () => {
-            if (currentIndex < validtimes.length - 1) {
+            if (pastOffset > 0) {
+                pastOffset--;
+                const futureTime = calculatePastTime(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime, pastOffset);
+                updateRadarLayer(futureTime.basetime, futureTime.validtime);
+            } else if (currentIndex < validtimes.length - 1) {
                 currentIndex++;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
         };
+
+        function calculatePastTime(basetime, validtime, offset) {
+            const pastBaseTime = (parseInt(basetime) - offset * 500).toString().padStart(12, '0');
+            const pastValidTime = (parseInt(validtime) - offset * 500).toString().padStart(12, '0');
+            return { basetime: pastBaseTime, validtime: pastValidTime };
+        }
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
