@@ -184,7 +184,7 @@
                 pastOffset--;
                 const futureTime = calculateFutureTime(validtimes[currentIndex].basetime, pastOffset);
                 updateRadarLayer(validtimes[currentIndex].basetime, futureTime.validtime);
-            } else if (currentIndex < validtimes.length - 1) {
+            } else if (currentIndex < validtimes.length - 1 || pastOffset > 0) {
                 currentIndex++;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
