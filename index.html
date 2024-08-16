@@ -149,6 +149,9 @@
                     return;
                 }
 
+                // 初期表示を現在時刻に対応するレーダー画像に設定
+                currentIndex = validtimes.length - 1;
+
                 map = new maplibregl.Map({
                     container: 'map',
                     style: {
@@ -178,7 +181,7 @@
                 });
 
                 map.on('load', function () {
-                    updateRadarLayer(validtimes[0].basetime, validtimes[0].validtime);
+                    updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
                 });
             })
             .catch(error => console.error('Error loading JSON:', error));
