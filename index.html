@@ -53,7 +53,7 @@
         let map;
         let currentIndex = 0;
         let validtimes = [];
-        let currentLayer = null; // currentLayerを初期化
+        let currentLayer = null;
 
         function updateRadarLayer(basetime, validtime) {
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
@@ -88,7 +88,6 @@
                 source: newMaskLayerId
             });
 
-            // 既存のレイヤーを削除
             if (currentLayer) {
                 if (map.getLayer(currentLayer.radar)) {
                     map.removeLayer(currentLayer.radar);
@@ -105,13 +104,11 @@
                 }
             }
 
-            // 現在のレイヤー情報を更新
             currentLayer = {
                 radar: newRadarLayerId,
                 mask: newMaskLayerId
             };
 
-            // JSTに変換して表示 (秒を除く)
             const validDateUTC = new Date(validtime.slice(0, 4), validtime.slice(4, 6) - 1, validtime.slice(6, 8), validtime.slice(8, 10), validtime.slice(10, 12));
             const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
             const formattedDateJST = validDateJST.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hour12: false }).slice(0, -3);
@@ -163,7 +160,6 @@
                     return;
                 }
 
-                // 地図の初期化
                 map = new maplibregl.Map({
                     container: 'map',
                     style: {
@@ -188,12 +184,11 @@
                             }
                         ]
                     },
-                    center: [139.6917, 35.6895], // 東京の中心
+                    center: [139.6917, 35.6895],
                     zoom: 6
                 });
 
                 map.on('load', function () {
-                    // 最初のレーダー画像を表示
                     updateRadarLayer(validtimes[0].basetime, validtimes[0].validtime);
                 });
             })
