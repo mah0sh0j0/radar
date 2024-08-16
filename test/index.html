@@ -171,14 +171,12 @@ function updateRadarLayer(basetime, validtime) {
         parseInt(validtime.slice(10, 12))
     );
 
-    // 現在時刻よりも1分以上未来のデータは表示しない
-    if (validDateUTC.getTime() > now.getTime() + 60000) {
-        return; // 1分以上未来のデータは表示しない
-    }
-
-    // 現在時刻が有効時刻から1分未満の場合も表示しない
-    if (now.getTime() < validDateUTC.getTime() + 60000) {
-        return;
+    // validtimeが現在時刻よりも未来、または現在時刻が有効時刻から1分未満の場合は、前回のデータを表示
+    if (validDateUTC.getTime() > now.getTime() || now.getTime() < validDateUTC.getTime() + 60000) {
+        // 前回のデータ（validtimeの5分前）を表示
+        const previousValidTime = new Date(validDateUTC.getTime() - 5 * 60 * 1000);
+        const previousValidTimeStr = `${previousValidTime.getUTCFullYear()}${(previousValidTime.getUTCMonth() + 1).toString().padStart(2, '0')}${previousValidTime.getUTCDate().toString().padStart(2, '0')}${previousValidTime.getUTCHours().toString().padStart(2, '0')}${previousValidTime.getUTCMinutes().toString().padStart(2, '0')}`;
+        validtime = previousValidTimeStr; // validtimeを前回の時間に設定
     }
 
     const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
@@ -233,6 +231,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
