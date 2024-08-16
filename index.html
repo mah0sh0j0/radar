@@ -157,7 +157,7 @@
             const isAtLastData = currentIndex === validtimes.length - 1 && pastOffset === 0;
 
             document.getElementById('prev-button').disabled = isAtFirstData;
-            document.getElementById('next-button').disabled = isAtLastData && pastOffset === 0;
+            document.getElementById('next-button').disabled = isAtLastData;
         }
 
         document.getElementById('prev-button').onclick = () => {
