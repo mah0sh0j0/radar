@@ -159,6 +159,23 @@
 function updateRadarLayer(basetime, validtime) {
     if (!map) return;
 
+    // 現在時刻を取得
+    const now = new Date();
+    
+    // validtimeをUTCとして解析
+    const validDateUTC = new Date(
+        parseInt(validtime.slice(0, 4)),
+        parseInt(validtime.slice(4, 6)) - 1,
+        parseInt(validtime.slice(6, 8)),
+        parseInt(validtime.slice(8, 10)),
+        parseInt(validtime.slice(10, 12))
+    );
+
+    // 現在時刻よりも1分以上未来のデータは表示しない
+    if (validDateUTC.getTime() > now.getTime() + 60000) {
+        return; // 1分以上未来のデータは表示しない
+    }
+
     const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
     const newRadarLayerId = `jma-radar-${Date.now()}`;
@@ -206,18 +223,12 @@ function updateRadarLayer(basetime, validtime) {
         currentLayers = [newRadarLayerId];
     });
 
-    const validDateUTC = new Date(
-        parseInt(validtime.slice(0, 4)),
-        parseInt(validtime.slice(4, 6)) - 1,
-        parseInt(validtime.slice(6, 8)),
-        parseInt(validtime.slice(8, 10)),
-        parseInt(validtime.slice(10, 12))
-    );
     const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
     const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
         function updateNavButtons() {
