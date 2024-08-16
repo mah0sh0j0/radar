@@ -47,16 +47,17 @@
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
+                console.log("Fetched Data: ", data);  // JSONデータを確認
+
                 const basetime = data[0].basetime;
-                const validtime = data[0].validtime; // validtimeの値を正しく取得
+                const validtimeObject = data[0].validtime; // validtimeの配列を取得
+                const validtime = validtimeObject[0];  // 配列から最初のvalidtimeを取得
 
                 console.log("basetime: ", basetime);  // basetimeの確認
+                console.log("validtimeObject: ", validtimeObject);  // validtimeObjectの確認
                 console.log("validtime: ", validtime);  // validtimeの確認
 
-                const firstValidtime = validtime[0].validtime;  // 最初のvalidtimeを取得
-                console.log("First validtime: ", firstValidtime);  // 最初のvalidtimeを確認
-
-                const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${firstValidtime}/surf/hrpns/{z}/{x}/{y}.png`;
+                const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
                 console.log("Generated Tile URL: ", tileUrl);  // 生成されたURLを確認
 
