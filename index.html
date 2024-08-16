@@ -7,30 +7,29 @@
     <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
     <style>
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            height: 100%; 
-            width: 100%;
-            overflow: hidden;
-        }
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
         #map { 
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100vw;
-            height: 100vh;
-            margin: 0;
-            padding: 0;
-        }
+                width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+             }
         #nav-bar {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            background-color: #d8b4e2;
+            background-color: #d8b4e2; /* ライトパープル */
             color: #ffffff;
             padding: 10px;
             z-index: 1;
@@ -51,7 +50,7 @@
             width: 100%;
         }
         .nav-button {
-            background-color: #a7c7e7;
+            background-color: #a7c7e7; /* パステルブルー */
             color: #ffffff;
             border: none;
             padding: 5px 10px;
@@ -66,11 +65,11 @@
         }
         #crosshair-horizontal, #crosshair-vertical {
             position: absolute;
-            background: #ffcdf4;
+            background: #ffcdf4; /* ピンク */
             z-index: 10;
         }
         #crosshair-horizontal {
-            width: 50px;
+            width: 50px; /* 十字線の水平線の長さ */
             height: 2px;
             top: 50%;
             left: 50%;
@@ -78,7 +77,7 @@
         }
         #crosshair-vertical {
             width: 2px;
-            height: 50px;
+            height: 50px; /* 十字線の垂直線の長さ */
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -89,18 +88,18 @@
             left: 50%;
             transform: translateX(-50%);
             padding: 5px;
-            background-color: #f5f5ff;
+            background-color: #f5f5ff; /* ライトパープル */
             border: 1px solid #ccc;
             border-radius: 20px;
             z-index: 10;
-            white-space: pre-line;
+            white-space: pre-line; /* 改行を反映 */
             color: #666666;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         #slider {
-            width: 200px;
+            width: 200px; /* 横幅を調整 */
             margin: 0 10px;
-            background-color: #a7c7e7;
+            background-color: #a7c7e7; /* パステルブルー */
         }
         #attribution {
             position: absolute;
@@ -139,71 +138,97 @@
         let slider = document.getElementById('slider');
         let visibility = true;
 
-        function updateRadarLayer(basetime, validtime) {
-            if (!map) return;
+function updateRadarLayer(basetime, validtime) {
+    if (!map) return;
 
-            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+    const now = new Date();
+    const futureTime = new Date(
+        parseInt(validtime.slice(0, 4)),
+        parseInt(validtime.slice(4, 6)) - 1,
+        parseInt(validtime.slice(6, 8)),
+        parseInt(validtime.slice(8, 10)),
+        parseInt(validtime.slice(10, 12))
+    );
 
-            const newRadarLayerId = `jma-radar-${Date.now()}`;
+    // 45秒未満の時はまだ画像を表示しない
+    if (futureTime > now || (now.getMinutes() === futureTime.getMinutes() && now.getSeconds() < 45)) {
+        console.log("Skipping future time:", validtime);
+        return;
+    }
 
-            // レーダーレイヤーを再読み込み
-            map.addSource(newRadarLayerId, {
-                type: 'raster',
-                tiles: [tileUrl],
-                tileSize: 256,
-                maxzoom: 10
-            });
+    // 更新時刻から1分以内の未来の時刻は読み込まない
+    const oneMinuteLater = new Date(now.getTime() + 60 * 1000);
+    if (futureTime > oneMinuteLater) {
+        console.log("Skipping time within 1 minute after update:", validtime);
+        return;
+    }
 
-            map.addLayer({
-                id: newRadarLayerId,
-                type: 'raster',
-                source: newRadarLayerId
-            });
+    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+    const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
-            if (!currentLayer) {
-                const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
-                const newMaskLayerId = `jma-mask`;
+    const newRadarLayerId = `jma-radar-${Date.now()}`;
+    const newMaskLayerId = `jma-mask-${Date.now()}`;
 
-                map.addSource(newMaskLayerId, {
-                    type: 'raster',
-                    tiles: [maskUrl],
-                    tileSize: 256,
-                    maxzoom: 10
-                });
+    map.addSource(newRadarLayerId, {
+        type: 'raster',
+        tiles: [tileUrl],
+        tileSize: 256,
+        maxzoom: 10
+    });
 
-                map.addLayer({
-                    id: newMaskLayerId,
-                    type: 'raster',
-                    source: newMaskLayerId
-                });
+    map.addLayer({
+        id: newRadarLayerId,
+        type: 'raster',
+        source: newRadarLayerId
+    });
 
-                currentLayer = {
-                    radar: newRadarLayerId,
-                    mask: newMaskLayerId
-                };
-            } else {
-                if (map.getLayer(currentLayer.radar)) {
-                    map.removeLayer(currentLayer.radar);
-                }
-                if (map.getSource(currentLayer.radar)) {
-                    map.removeSource(currentLayer.radar);
-                }
+    map.addSource(newMaskLayerId, {
+        type: 'raster',
+        tiles: [maskUrl],
+        tileSize: 256,
+        maxzoom: 10
+    });
 
-                currentLayer.radar = newRadarLayerId;
-            }
+    map.addLayer({
+        id: newMaskLayerId,
+        type: 'raster',
+        source: newMaskLayerId
+    });
 
-            const validDateUTC = new Date(
-                parseInt(validtime.slice(0, 4)),
-                parseInt(validtime.slice(4, 6)) - 1,
-                parseInt(validtime.slice(6, 8)),
-                parseInt(validtime.slice(8, 10)),
-                parseInt(validtime.slice(10, 12))
-            );
-            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-            const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
-
-            document.getElementById('time-display').innerText = formattedDate;
+    if (currentLayer) {
+        if (map.getLayer(currentLayer.radar)) {
+            map.removeLayer(currentLayer.radar);
         }
+        if (map.getSource(currentLayer.radar)) {
+            map.removeSource(currentLayer.radar);
+        }
+
+        if (map.getLayer(currentLayer.mask)) {
+            map.removeLayer(currentLayer.mask);
+        }
+        if (map.getSource(currentLayer.mask)) {
+            map.removeSource(currentLayer.mask);
+        }
+    }
+
+    currentLayer = {
+        radar: newRadarLayerId,
+        mask: newMaskLayerId
+    };
+
+    const validDateUTC = new Date(
+        parseInt(validtime.slice(0, 4)),
+        parseInt(validtime.slice(4, 6)) - 1,
+        parseInt(validtime.slice(6, 8)),
+        parseInt(validtime.slice(8, 10)),
+        parseInt(validtime.slice(10, 12))
+    );
+    const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
+
+    document.getElementById('time-display').innerText = formattedDate;
+}
+
 
         function updateNavButtons() {
             document.getElementById('prev-button').disabled = currentIndex === 0;
@@ -268,25 +293,6 @@
             return { basetime: pastBaseTime, validtime: pastValidTime };
         }
 
-        function getLatestIndex() {
-            const now = new Date();
-            for (let i = validtimes.length - 1; i >= 0; i--) {
-                const validTime = validtimes[i].validtime;
-                const validTimeDate = new Date(
-                    parseInt(validTime.slice(0, 4)),
-                    parseInt(validTime.slice(4, 6)) - 1,
-                    parseInt(validTime.slice(6, 8)),
-                    parseInt(validTime.slice(8, 10)),
-                    parseInt(validTime.slice(10, 12))
-                );
-                const oneMinuteAfterValidTime = new Date(validTimeDate.getTime() + 60 * 1000);
-                if (now >= oneMinuteAfterValidTime) {
-                    return i;
-                }
-            }
-            return validtimes.length - 1; // すべてが未来の時刻の場合は、最後のインデックスを返す
-        }
-
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
@@ -299,12 +305,6 @@
                     document.getElementById('time-display').innerText = 'データが見つかりませんでした';
                     return;
                 }
-
-                currentIndex = getLatestIndex(); // 最新のデータを表示する
-                slider.max = validtimes.length - 1; // スライダーの最大値を正しい値に設定
-                slider.value = currentIndex; // スライダーを最新データに設定
-                updateSlider();
-                updateNavButtons();
 
                 map = new maplibregl.Map({
                     container: 'map',
@@ -332,14 +332,16 @@
                     },
                     center: [139, 35],
                     zoom: 6,
-                    minZoom: 4,
-                    maxZoom: 14
+                    minZoom: 4,  // 最小ズームレベル
+                    maxZoom: 14  // 最大ズームレベル
                 });
 
-                map.on('load', function() {
-                    map.resize();
+                map.on('load', function () {
+                    currentIndex = maxOffset; // 最新のデータを表示する
+                    updateSlider();
+                    updateNavButtons();
 
-                    map.on('move', function() {
+                    map.on('move', function () {
                         const center = map.getCenter();
                         document.getElementById('centerLatLngDisplay').innerText = 
                             `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
