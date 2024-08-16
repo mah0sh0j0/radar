@@ -136,6 +136,48 @@
             }
         };
 
+        function addPointsToMap() {
+            const bounds = map.getBounds();
+            const minLat = Math.floor(bounds.getSouthWest().lat * 10) / 10;
+            const maxLat = Math.ceil(bounds.getNorthEast().lat * 10) / 10;
+            const minLon = Math.floor(bounds.getSouthWest().lng * 10) / 10;
+            const maxLon = Math.ceil(bounds.getNorthEast().lng * 10) / 10;
+
+            for (let lat = minLat; lat <= maxLat; lat += 0.1) {
+                for (let lon = minLon; lon <= maxLon; lon += 0.1) {
+                    const pointId = `point-${lat}-${lon}`;
+                    if (map.getLayer(pointId)) continue; // 既にポイントがある場合はスキップ
+
+                    map.addLayer({
+                        id: pointId,
+                        type: 'circle',
+                        source: {
+                            type: 'geojson',
+                            data: {
+                                type: 'Feature',
+                                geometry: {
+                                    type: 'Point',
+                                    coordinates: [lon, lat]
+                                }
+                            }
+                        },
+                        paint: {
+                            'circle-radius': 4,
+                            'circle-color': '#FF0000'
+                        }
+                    });
+
+                    // ポイントクリック時のポップアップ
+                    map.on('click', pointId, function (e) {
+                        new maplibregl.Popup()
+                            .setLngLat(e.lngLat)
+                            .setHTML(`<strong>緯度:</strong> ${lat}<br><strong>経度:</strong> ${lon}`)
+                            .addTo(map);
+                    });
+                }
+            }
+        }
+
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
@@ -149,7 +191,6 @@
                     return;
                 }
 
-                // 初期表示を現在時刻に対応するレーダー画像に設定
                 currentIndex = validtimes.length - 1;
 
                 map = new maplibregl.Map({
@@ -182,31 +223,11 @@
 
                 map.on('load', function () {
                     updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
+                    addPointsToMap();
+                });
 
-                    // 0.1度ずつのポイントを表示する例
-                    for (let lat = 35.0; lat <= 35.9; lat += 0.1) {
-                        for (let lon = 139.0; lon <= 139.9; lon += 0.1) {
-                            const pointId = `point-${lat}-${lon}`;
-                            map.addLayer({
-                                id: pointId,
-                                type: 'circle',
-                                source: {
-                                    type: 'geojson',
-                                    data: {
-                                        type: 'Feature',
-                                        geometry: {
-                                            type: 'Point',
-                                            coordinates: [lon, lat]
-                                        }
-                                    }
-                                },
-                                paint: {
-                                    'circle-radius': 4,
-                                    'circle-color': '#FF0000'
-                                }
-                            });
-                        }
-                    }
+                map.on('moveend', function () {
+                    addPointsToMap(); // 地図の移動後にポイントを再表示
                 });
             })
             .catch(error => console.error('Error loading JSON:', error));
