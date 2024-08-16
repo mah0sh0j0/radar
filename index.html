@@ -20,8 +20,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            width: 100vw; /* 修正: 100%から100vwに変更 */
-            height: 100vh; /* 修正: 100%から100vhに変更 */
+            width: 100vw;
+            height: 100vh;
             margin: 0;
             padding: 0;
         }
@@ -30,7 +30,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            background-color: #d8b4e2; /* ライトパープル */
+            background-color: #d8b4e2;
             color: #ffffff;
             padding: 10px;
             z-index: 1;
@@ -51,7 +51,7 @@
             width: 100%;
         }
         .nav-button {
-            background-color: #a7c7e7; /* パステルブルー */
+            background-color: #a7c7e7;
             color: #ffffff;
             border: none;
             padding: 5px 10px;
@@ -66,11 +66,11 @@
         }
         #crosshair-horizontal, #crosshair-vertical {
             position: absolute;
-            background: #ffcdf4; /* ピンク */
+            background: #ffcdf4;
             z-index: 10;
         }
         #crosshair-horizontal {
-            width: 50px; /* 十字線の水平線の長さ */
+            width: 50px;
             height: 2px;
             top: 50%;
             left: 50%;
@@ -78,7 +78,7 @@
         }
         #crosshair-vertical {
             width: 2px;
-            height: 50px; /* 十字線の垂直線の長さ */
+            height: 50px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -89,18 +89,18 @@
             left: 50%;
             transform: translateX(-50%);
             padding: 5px;
-            background-color: #f5f5ff; /* ライトパープル */
+            background-color: #f5f5ff;
             border: 1px solid #ccc;
             border-radius: 20px;
             z-index: 10;
-            white-space: pre-line; /* 改行を反映 */
+            white-space: pre-line;
             color: #666666;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         #slider {
-            width: 200px; /* 横幅を調整 */
+            width: 200px;
             margin: 0 10px;
-            background-color: #a7c7e7; /* パステルブルー */
+            background-color: #a7c7e7;
         }
         #attribution {
             position: absolute;
@@ -119,6 +119,7 @@
     <div id="nav-bar">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
+            <button id="play-button" class="nav-button">▶︎</button> <!-- 自動再生ボタンを追加 -->
             <button id="prev-button" class="nav-button">&lt;</button>
             <input type="range" id="slider" min="0" max="36" step="1" value="36">
             <button id="next-button" class="nav-button">&gt;</button>
@@ -138,95 +139,89 @@
         let maxOffset = 36; // 最大で36（3時間前）まで
         let slider = document.getElementById('slider');
         let visibility = true;
+        let isPlaying = false; // 自動再生の状態
+        let playInterval = null; // 自動再生のインターバル
 
-function updateRadarLayer(basetime, validtime) {
-    if (!map) return;
+        function updateRadarLayer(basetime, validtime) {
+            if (!map) return;
 
-    const now = new Date();
-    const futureTime = new Date(
-        parseInt(validtime.slice(0, 4)),
-        parseInt(validtime.slice(4, 6)) - 1,
-        parseInt(validtime.slice(6, 8)),
-        parseInt(validtime.slice(8, 10)),
-        parseInt(validtime.slice(10, 12))
-    );
+            const now = new Date();
+            const futureTime = new Date(
+                parseInt(validtime.slice(0, 4)),
+                parseInt(validtime.slice(4, 6)) - 1,
+                parseInt(validtime.slice(6, 8)),
+                parseInt(validtime.slice(8, 10)),
+                parseInt(validtime.slice(10, 12))
+            );
 
-    // 現在の時刻が futureTime より1分以上経過していない場合はスキップ
-    const oneMinuteAfterFutureTime = new Date(futureTime.getTime() + 60 * 1000);
-    if (now.getTime() < oneMinuteAfterFutureTime.getTime()) {
-        console.log("Skipping data until 1 minute after the valid time:", validtime);
-        return;
-    }
+            const oneMinuteAfterFutureTime = new Date(futureTime.getTime() + 60 * 1000);
+            if (now.getTime() < oneMinuteAfterFutureTime.getTime()) {
+                console.log("Skipping data until 1 minute after the valid time:", validtime);
+                return;
+            }
 
-    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
-    const newRadarLayerId = `jma-radar-${Date.now()}`;
+            const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-    // レーダーレイヤーを再読み込み
-    map.addSource(newRadarLayerId, {
-        type: 'raster',
-        tiles: [tileUrl],
-        tileSize: 256,
-        maxzoom: 10
-    });
+            // レーダーレイヤーを再読み込み
+            map.addSource(newRadarLayerId, {
+                type: 'raster',
+                tiles: [tileUrl],
+                tileSize: 256,
+                maxzoom: 10
+            });
 
-    map.addLayer({
-        id: newRadarLayerId,
-        type: 'raster',
-        source: newRadarLayerId
-    });
+            map.addLayer({
+                id: newRadarLayerId,
+                type: 'raster',
+                source: newRadarLayerId
+            });
 
-    if (!currentLayer) {
-        const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
-        const newMaskLayerId = `jma-mask`;
+            if (!currentLayer) {
+                const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
+                const newMaskLayerId = `jma-mask`;
 
-        map.addSource(newMaskLayerId, {
-            type: 'raster',
-            tiles: [maskUrl],
-            tileSize: 256,
-            maxzoom: 10
-        });
+                map.addSource(newMaskLayerId, {
+                    type: 'raster',
+                    tiles: [maskUrl],
+                    tileSize: 256,
+                    maxzoom: 10
+                });
 
-        map.addLayer({
-            id: newMaskLayerId,
-            type: 'raster',
-            source: newMaskLayerId
-        });
+                map.addLayer({
+                    id: newMaskLayerId,
+                    type: 'raster',
+                    source: newMaskLayerId
+                });
 
-        currentLayer = {
-            radar: newRadarLayerId,
-            mask: newMaskLayerId
-        };
-    } else {
-        if (map.getLayer(currentLayer.radar)) {
-            map.removeLayer(currentLayer.radar);
+                currentLayer = {
+                    radar: newRadarLayerId,
+                    mask: newMaskLayerId
+                };
+            } else {
+                if (map.getLayer(currentLayer.radar)) {
+                    map.removeLayer(currentLayer.radar);
+                }
+                if (map.getSource(currentLayer.radar)) {
+                    map.removeSource(currentLayer.radar);
+                }
+
+                currentLayer.radar = newRadarLayerId;
+            }
+
+            const validDateUTC = new Date(
+                parseInt(validtime.slice(0, 4)),
+                parseInt(validtime.slice(4, 6)) - 1,
+                parseInt(validtime.slice(6, 8)),
+                parseInt(validtime.slice(8, 10)),
+                parseInt(validtime.slice(10, 12))
+            );
+            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+            const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
+
+            document.getElementById('time-display').innerText = formattedDate;
         }
-        if (map.getSource(currentLayer.radar)) {
-            map.removeSource(currentLayer.radar);
-        }
-
-        currentLayer.radar = newRadarLayerId;
-    }
-
-    const validDateUTC = new Date(
-        parseInt(validtime.slice(0, 4)),
-        parseInt(validtime.slice(4, 6)) - 1,
-        parseInt(validtime.slice(6, 8)),
-        parseInt(validtime.slice(8, 10)),
-        parseInt(validtime.slice(10, 12))
-    );
-    const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
-
-    document.getElementById('time-display').innerText = formattedDate;
-}
-
-
-
-
-
-
-
 
         function updateNavButtons() {
             document.getElementById('prev-button').disabled = currentIndex === 0;
@@ -267,6 +262,29 @@ function updateRadarLayer(basetime, validtime) {
             document.getElementById('crosshair-horizontal').style.display = visibility ? 'block' : 'none';
             document.getElementById('crosshair-vertical').style.display = visibility ? 'block' : 'none';
             document.getElementById('centerLatLngDisplay').style.display = visibility ? 'block' : 'none';
+        };
+
+        document.getElementById('play-button').onclick = () => {
+            if (isPlaying) {
+                clearInterval(playInterval);
+                isPlaying = false;
+                document.getElementById('play-button').innerText = '▶︎';
+            } else {
+                isPlaying = true;
+                document.getElementById('play-button').innerText = '⏸'; // Pause symbol
+                playInterval = setInterval(() => {
+                    if (currentIndex < maxOffset) {
+                        currentIndex++;
+                        slider.value = currentIndex;
+                        updateSlider();
+                        updateNavButtons();
+                    } else {
+                        clearInterval(playInterval);
+                        isPlaying = false;
+                        document.getElementById('play-button').innerText = '▶︎';
+                    }
+                }, 500); // 0.5秒間隔で進む
+            }
         };
 
         function calculatePastTime(basetime, validtime, offset) {
@@ -330,13 +348,13 @@ function updateRadarLayer(basetime, validtime) {
                     },
                     center: [139, 35],
                     zoom: 6,
-                    minZoom: 4,  // 最小ズームレベル
-                    maxZoom: 14  // 最大ズームレベル
+                    minZoom: 4,
+                    maxZoom: 14
                 });
 
                 map.on('load', function() {
-                    map.resize(); // 地図のサイズを調整
-                    currentIndex = maxOffset; // 最新のデータを表示する
+                    map.resize();
+                    currentIndex = maxOffset;
                     updateSlider();
                     updateNavButtons();
 
