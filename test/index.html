@@ -246,7 +246,7 @@
             } else {
                 isPlaying = true;
                 document.getElementById('play-button').innerText = '‖'; // 並列記号を使用
-                currentIndex = 0; // 再生開始時に最初に戻す
+                currentIndex = maxOffset; // 再生開始時に最新の画像を表示する
                 slider.value = currentIndex;
                 updateSlider();
                 playInterval = setInterval(() => {
@@ -331,7 +331,7 @@
 
                 map.on('load', function() {
                     map.resize();
-                    currentIndex = maxOffset;
+                    currentIndex = maxOffset; // 最新のインデックスに設定
                     updateSlider();
                     updateNavButtons();
 
