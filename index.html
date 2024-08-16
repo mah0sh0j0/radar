@@ -91,7 +91,7 @@
         let pastOffset = 0; // 過去に遡る際のオフセット（5分刻み）
 
         function updateRadarLayer(basetime, validtime) {
-            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}00/surf/hrpns/{z}/{x}/{y}.png`;
             const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
             const newRadarLayerId = `jma-radar-${Date.now()}`;
