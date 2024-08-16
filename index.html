@@ -339,6 +339,12 @@
                     return;
                 }
 
+                currentIndex = getLatestIndex(); // 最新のデータを表示する
+                slider.max = validtimes.length - 1; // スライダーの最大値を正しい値に設定
+                slider.value = currentIndex; // スライダーを最新データに設定
+                updateSlider();
+                updateNavButtons();
+
                 map = new maplibregl.Map({
                     container: 'map',
                     style: {
@@ -371,11 +377,6 @@
 
                 map.on('load', function() {
                     map.resize();
-
-                    currentIndex = getLatestIndex(); // 最新のデータを表示する
-                    slider.max = validtimes.length - 1; // スライダーの最大値を正しい値に設定
-                    updateSlider();
-                    updateNavButtons();
 
                     map.on('move', function() {
                         const center = map.getCenter();
