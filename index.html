@@ -65,7 +65,7 @@
         });
 
         // JSONからbasetimeとvalidtimeを取得
-        fetch('./targetTimes_N2.json')
+        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
                 targetTimes = data;
