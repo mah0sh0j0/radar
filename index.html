@@ -108,6 +108,20 @@
         function updateRadarLayer(basetime, validtime) {
             if (!map) return;
 
+            const now = new Date();
+            const futureTime = new Date(
+                parseInt(validtime.slice(0, 4)),
+                parseInt(validtime.slice(4, 6)) - 1,
+                parseInt(validtime.slice(6, 8)),
+                parseInt(validtime.slice(8, 10)),
+                parseInt(validtime.slice(10, 12))
+            );
+
+            if (futureTime > now) {
+                console.log("Skipping future time:", validtime);
+                return;
+            }
+
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
             const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
@@ -226,76 +240,77 @@
             date.setMinutes(date.getMinutes() - offset * 5);
 
             const year = date.getFullYear().toString().padStart(4, '0');
-const month = (date.getMonth() + 1).toString().padStart(2, '0');
-const day = date.getDate().toString().padStart(2, '0');
-const hours = date.getHours().toString().padStart(2, '0');
-const minutes = date.getMinutes().toString().padStart(2, '0');
-        const pastBaseTime = `${year}${month}${day}${hours}${minutes}00`;
-        const pastValidTime = pastBaseTime;
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
 
-        return { basetime: pastBaseTime, validtime: pastValidTime };
-    }
+            const pastBaseTime = `${year}${month}${day}${hours}${minutes}00`;
+            const pastValidTime = pastBaseTime;
 
-    fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
-        .then(response => response.json())
-        .then(data => {
-            validtimes = data.map(item => ({
-                basetime: item.basetime,
-                validtime: item.validtime
-            }));
+            return { basetime: pastBaseTime, validtime: pastValidTime };
+        }
 
-            if (validtimes.length === 0) {
-                document.getElementById('time-display').innerText = 'データが見つかりませんでした';
-                return;
-            }
+        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
+            .then(response => response.json())
+            .then(data => {
+                validtimes = data.map(item => ({
+                    basetime: item.basetime,
+                    validtime: item.validtime
+                }));
 
-            map = new maplibregl.Map({
-                container: 'map',
-                style: {
-                    version: 8,
-                    sources: {
-                        'usgs': {
-                            type: 'raster',
-                            tiles: [
-                                'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
-                            ],
-                            tileSize: 256,
-                            maxzoom: 19
-                        }
+                if (validtimes.length === 0) {
+                    document.getElementById('time-display').innerText = 'データが見つかりませんでした';
+                    return;
+                }
+
+                map = new maplibregl.Map({
+                    container: 'map',
+                    style: {
+                        version: 8,
+                        sources: {
+                            'usgs': {
+                                type: 'raster',
+                                tiles: [
+                                    'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+                                    },
+                                tileSize: 256,
+                                maxzoom: 19
+                            }
+                        ],
+                        layers: [
+                            {
+                                id: 'usgs-layer',
+                                type: 'raster',
+                                source: 'usgs',
+                                minzoom: 0,
+                                maxzoom: 19
+                            }
+                        ]
                     },
-                    layers: [
-                        {
-                            id: 'usgs-layer',
-                            type: 'raster',
-                            source: 'usgs',
-                            minzoom: 0,
-                            maxzoom: 19
-                        }
-                    ]
-                },
-                center: [139, 35],
-                zoom: 6,
-                minZoom: 4,  // 最小ズームレベル
-                maxZoom: 14  // 最大ズームレベル
-            });
-
-            map.on('load', function () {
-                currentIndex = maxOffset; // 最新のデータを表示する
-                updateSlider();
-                updateNavButtons();
-
-                map.on('move', function () {
-                    const center = map.getCenter();
-                    document.getElementById('centerLatLngDisplay').innerText = 
-                        `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
+                    center: [139, 35],
+                    zoom: 6,
+                    minZoom: 4,  // 最小ズームレベル
+                    maxZoom: 14  // 最大ズームレベル
                 });
 
-                const initialCenter = map.getCenter();
-                document.getElementById('centerLatLngDisplay').innerText = 
-                    `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
-            });
-        })
-        .catch(error => console.error('Error loading JSON:', error));
-</script>
+                map.on('load', function () {
+                    currentIndex = maxOffset; // 最新のデータを表示する
+                    updateSlider();
+                    updateNavButtons();
+
+                    map.on('move', function () {
+                        const center = map.getCenter();
+                        document.getElementById('centerLatLngDisplay').innerText = 
+                            `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
+                    });
+
+                    const initialCenter = map.getCenter();
+                    document.getElementById('centerLatLngDisplay').innerText = 
+                        `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
+                });
+            })
+            .catch(error => console.error('Error loading JSON:', error));
+    </script>
 </body>
 </html>
