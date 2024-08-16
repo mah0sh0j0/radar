@@ -119,7 +119,7 @@
     <div id="nav-bar">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="play-button" class="nav-button">▶︎</button> <!-- 自動再生ボタンを追加 -->
+            <button id="play-button" class="nav-button">▶︎</button> <!-- 自動再生ボタン -->
             <button id="prev-button" class="nav-button">&lt;</button>
             <input type="range" id="slider" min="0" max="36" step="1" value="36">
             <button id="next-button" class="nav-button">&gt;</button>
@@ -142,80 +142,47 @@
         let isPlaying = false; // 自動再生の状態
         let playInterval = null; // 自動再生のインターバル
 
-function updateRadarLayer(basetime, validtime) {
-    if (!map) return;
+        function updateRadarLayer(basetime, validtime) {
+            if (!map) return;
 
-    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
-    const newRadarLayerId = `jma-radar-${Date.now()}`;
+            const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-    // レーダーレイヤーを追加する前に、透明度を0に設定する
-    map.addSource(newRadarLayerId, {
-        type: 'raster',
-        tiles: [tileUrl],
-        tileSize: 256,
-        maxzoom: 10
-    });
+            // レーダーレイヤーを追加する前に、透明度を0に設定する
+            map.addSource(newRadarLayerId, {
+                type: 'raster',
+                tiles: [tileUrl],
+                tileSize: 256,
+                maxzoom: 10
+            });
 
-    map.addLayer({
-        id: newRadarLayerId,
-        type: 'raster',
-        source: newRadarLayerId,
-        paint: {
-            'raster-opacity': 0 // 透明度を0に設定
-        }
-    });
+            map.addLayer({
+                id: newRadarLayerId,
+                type: 'raster',
+                source: newRadarLayerId,
+                paint: {
+                    'raster-opacity': 0 // 透明度を0に設定
+                }
+            });
 
-    // フェードイン効果
-    map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
-        duration: 500 // 0.5秒かけてフェードイン
-    });
+            // フェードイン効果
+            map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
+                duration: 500 // 0.5秒かけてフェードイン
+            });
 
-    // 古いレイヤーを一定時間後に削除
-    if (currentLayer && map.getLayer(currentLayer.radar)) {
-        setTimeout(() => {
-            map.removeLayer(currentLayer.radar);
-            map.removeSource(currentLayer.radar);
-        }, 500); // 新しいレイヤーが完全にフェードインした後に削除
-    }
-
-    // 現在のレイヤーを更新
-    currentLayer.radar = newRadarLayerId;
-}
-
-
-
-            if (!currentLayer) {
-                const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
-                const newMaskLayerId = `jma-mask`;
-
-                map.addSource(newMaskLayerId, {
-                    type: 'raster',
-                    tiles: [maskUrl],
-                    tileSize: 256,
-                    maxzoom: 10
-                });
-
-                map.addLayer({
-                    id: newMaskLayerId,
-                    type: 'raster',
-                    source: newMaskLayerId
-                });
-
-                currentLayer = {
-                    radar: newRadarLayerId,
-                    mask: newMaskLayerId
-                };
-            } else {
-                if (map.getLayer(currentLayer.radar)) {
+            // 古いレイヤーを一定時間後に削除
+            if (currentLayer && map.getLayer(currentLayer.radar)) {
+                setTimeout(() => {
                     map.removeLayer(currentLayer.radar);
-                }
-                if (map.getSource(currentLayer.radar)) {
                     map.removeSource(currentLayer.radar);
-                }
-
-                currentLayer.radar = newRadarLayerId;
+                }, 500); // 新しいレイヤーが完全にフェードインした後に削除
             }
+
+            // 現在のレイヤーを更新
+            currentLayer = {
+                radar: newRadarLayerId
+            };
 
             const validDateUTC = new Date(
                 parseInt(validtime.slice(0, 4)),
