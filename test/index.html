@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>レーダー</title>
-<link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
-<script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- FontAwesomeのリンク -->
     <style>
         body, html { 
@@ -151,7 +150,7 @@
 
             const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-            // 新しいレイヤーを追加するが、初期状態では非表示
+            // レイヤーを追加する前に、透明度を0に設定する
             map.addSource(newRadarLayerId, {
                 type: 'raster',
                 tiles: [tileUrl],
@@ -164,28 +163,27 @@
                 type: 'raster',
                 source: newRadarLayerId,
                 paint: {
-                    'raster-opacity': 0 // 初期の透明度を0に設定
+                    'raster-opacity': 0 // 透明度を0に設定
                 }
             });
 
-            // 新しいレイヤーが完全にロードされたら古いレイヤーを削除し、新しいレイヤーを表示
-            map.once('idle', () => {
-                // 古いレイヤーを削除
-                currentLayers.forEach(layerId => {
-                    if (map.getLayer(layerId)) {
-                        map.removeLayer(layerId);
-                    }
-                    if (map.getSource(layerId)) {
-                        map.removeSource(layerId);
-                    }
-                });
-
-                // 新しいレイヤーの透明度を即座に100%に設定
-                map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1);
-
-                // 現在のレイヤーを更新
-                currentLayers = [newRadarLayerId];
+            // フェードイン効果
+            map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
+                duration: 500 // 0.5秒かけてフェードイン
             });
+
+            // 古いレイヤーを一定時間後に削除
+            currentLayers.forEach(layerId => {
+                if (map.getLayer(layerId)) {
+                    map.removeLayer(layerId);
+                }
+                if (map.getSource(layerId)) {
+                    map.removeSource(layerId);
+                }
+            });
+
+            // 現在のレイヤーを更新
+            currentLayers = [newRadarLayerId];
 
             const validDateUTC = new Date(
                 parseInt(validtime.slice(0, 4)),
