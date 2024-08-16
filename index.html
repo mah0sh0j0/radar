@@ -151,12 +151,12 @@ function updateRadarLayer(basetime, validtime) {
         parseInt(validtime.slice(10, 12))
     );
 
-    // futureTimeより1分後まで読み込まないようにする
+    // futureTime より 1 分後の時間
     const oneMinuteAfterFutureTime = new Date(futureTime.getTime() + 60 * 1000);
 
-    // 現在の時刻が、futureTimeより早い、または、futureTimeより1分後になるまでデータを読み込まない
+    // 現在の時刻が futureTime の 1 分後を過ぎていない場合、データをスキップ
     if (now < oneMinuteAfterFutureTime) {
-        console.log("Skipping time that is within 1 minute after future time:", validtime);
+        console.log("Skipping future data:", validtime);
         return;
     }
 
@@ -178,7 +178,6 @@ function updateRadarLayer(basetime, validtime) {
         source: newRadarLayerId
     });
 
-    // マスクレイヤーは最初の読み込み後に再読み込みしない
     if (!currentLayer) {
         const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
         const newMaskLayerId = `jma-mask`;
@@ -223,6 +222,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
