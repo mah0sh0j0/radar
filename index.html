@@ -119,7 +119,7 @@
     <div id="nav-bar">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="play-button" class="nav-button">▶︎</button> <!-- 自動再生ボタンを追加 -->
+            <button id="play-button" class="nav-button">▶︎</button>
             <button id="prev-button" class="nav-button">&lt;</button>
             <input type="range" id="slider" min="0" max="36" step="1" value="36">
             <button id="next-button" class="nav-button">&gt;</button>
@@ -271,19 +271,17 @@
                 document.getElementById('play-button').innerText = '▶︎';
             } else {
                 isPlaying = true;
-                document.getElementById('play-button').innerText = '⏸'; // Pause symbol
+                document.getElementById('play-button').innerText = '⏸';
                 playInterval = setInterval(() => {
                     if (currentIndex < maxOffset) {
                         currentIndex++;
-                        slider.value = currentIndex;
-                        updateSlider();
-                        updateNavButtons();
                     } else {
-                        clearInterval(playInterval);
-                        isPlaying = false;
-                        document.getElementById('play-button').innerText = '▶︎';
+                        currentIndex = 0; // ループ再生するためにインデックスをリセット
                     }
-                }, 500); // 0.5秒間隔で進む
+                    slider.value = currentIndex;
+                    updateSlider();
+                    updateNavButtons();
+                }, 500);
             }
         };
 
@@ -307,6 +305,25 @@
             const pastValidTime = pastBaseTime;
 
             return { basetime: pastBaseTime, validtime: pastValidTime };
+        }
+
+        function getLatestIndex() {
+            const now = new Date();
+            for (let i = validtimes.length - 1; i >= 0; i--) {
+                const validTime = validtimes[i].validtime;
+                const validTimeDate = new Date(
+                    parseInt(validTime.slice(0, 4)),
+                    parseInt(validTime.slice(4, 6)) - 1,
+                    parseInt(validTime.slice(6, 8)),
+                    parseInt(validTime.slice(8, 10)),
+                    parseInt(validTime.slice(10, 12))
+                );
+                const oneMinuteAfterValidTime = new Date(validTimeDate.getTime() + 60 * 1000);
+                if (now >= oneMinuteAfterValidTime) {
+                    return i;
+                }
+            }
+            return validtimes.length - 1; // すべてが未来の時刻の場合は、最後のインデックスを返す
         }
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
@@ -354,7 +371,9 @@
 
                 map.on('load', function() {
                     map.resize();
-                    currentIndex = maxOffset;
+
+                    currentIndex = getLatestIndex(); // 最新のデータを表示する
+                    slider.max = validtimes.length - 1; // スライダーの最大値を正しい値に設定
                     updateSlider();
                     updateNavButtons();
 
