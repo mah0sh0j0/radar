@@ -9,70 +9,106 @@
     <style>
         body, html { margin: 0; padding: 0; height: 100%; }
         #map { width: 100%; height: 100%; }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1;
+        }
+        #time-display {
+            margin-bottom: 5px;
+        }
+        .time-button {
+            display: block;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
+    <div id="controls">
+        <div id="time-display">Loading...</div>
+        <div id="time-buttons"></div>
+    </div>
     <div id="map"></div>
     <script>
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: {
-                version: 8,
-                sources: {
-                    'usgs': {
-                        type: 'raster',
-                        tiles: [
-                            'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
-                        ],
-                        tileSize: 256,
-                        maxzoom: 19
-                    }
-                },
-                layers: [
-                    {
-                        id: 'usgs-layer',
-                        type: 'raster',
-                        source: 'usgs',
-                        minzoom: 0,
-                        maxzoom: 19
-                    }
-                ]
-            },
-            center: [139.6917, 35.6895], // 東京の中心
-            zoom: 6
-        });
+        let map;
+        let currentLayer;
+
+        function updateRadarLayer(basetime, validtime) {
+            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+
+            if (currentLayer) {
+                map.removeLayer('jma-radar-layer');
+                map.removeSource('jma-radar');
+            }
+
+            map.addSource('jma-radar', {
+                type: 'raster',
+                tiles: [tileUrl],
+                tileSize: 256,
+                maxzoom: 10
+            });
+
+            map.addLayer({
+                id: 'jma-radar-layer',
+                type: 'raster',
+                source: 'jma-radar'
+            });
+
+            document.getElementById('time-display').innerText = `レーダー画像時刻: ${validtime}`;
+        }
 
         fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json')
             .then(response => response.json())
             .then(data => {
-                console.log("Fetched Data: ", data);  // JSONデータを確認
-
                 const basetime = data[0].basetime;
-                const validtime = data[0].validtime; // validtime配列を取得
+                const validtimes = data.map(item => item.validtime);
 
-                // validtimeが配列の中に直接あることを確認し、データ構造に合わせて修正
-                const firstValidtime = data[0].validtime;
-
-                console.log("basetime: ", basetime);
-                console.log("firstValidtime: ", firstValidtime);
-
-                const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${firstValidtime}/surf/hrpns/{z}/{x}/{y}.png`;
-
-                console.log("Generated Tile URL: ", tileUrl);
+                // 地図の初期化
+                map = new maplibregl.Map({
+                    container: 'map',
+                    style: {
+                        version: 8,
+                        sources: {
+                            'usgs': {
+                                type: 'raster',
+                                tiles: [
+                                    'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}?blankTile=false'
+                                ],
+                                tileSize: 256,
+                                maxzoom: 19
+                            }
+                        },
+                        layers: [
+                            {
+                                id: 'usgs-layer',
+                                type: 'raster',
+                                source: 'usgs',
+                                minzoom: 0,
+                                maxzoom: 19
+                            }
+                        ]
+                    },
+                    center: [139.6917, 35.6895], // 東京の中心
+                    zoom: 6
+                });
 
                 map.on('load', function () {
-                    map.addSource('jma-radar', {
-                        type: 'raster',
-                        tiles: [tileUrl],
-                        tileSize: 256,
-                        maxzoom: 10
-                    });
+                    // 最初のレーダー画像を表示
+                    updateRadarLayer(basetime, validtimes[0]);
+                });
 
-                    map.addLayer({
-                        id: 'jma-radar-layer',
-                        type: 'raster',
-                        source: 'jma-radar'
-                    });
+                // ボタンを作成して時間ごとに切り替え
+                const timeButtonsContainer = document.getElementById('time-buttons');
+                validtimes.forEach((validtime, index) => {
+                    const button = document.createElement('button');
+                    button.innerText = validtime;
+                    button.className = 'time-button';
+                    button.onclick = () => updateRadarLayer(basetime, validtime);
+                    timeButtonsContainer.appendChild(button);
                 });
             })
             .catch(error => console.error('Error loading JSON:', error));
