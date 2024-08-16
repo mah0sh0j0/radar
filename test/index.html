@@ -142,41 +142,47 @@
         let isPlaying = false; // 自動再生の状態
         let playInterval = null; // 自動再生のインターバル
 
-        function updateRadarLayer(basetime, validtime) {
-            if (!map) return;
+function updateRadarLayer(basetime, validtime) {
+    if (!map) return;
 
-            const now = new Date();
-            const futureTime = new Date(
-                parseInt(validtime.slice(0, 4)),
-                parseInt(validtime.slice(4, 6)) - 1,
-                parseInt(validtime.slice(6, 8)),
-                parseInt(validtime.slice(8, 10)),
-                parseInt(validtime.slice(10, 12))
-            );
+    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
-            const oneMinuteAfterFutureTime = new Date(futureTime.getTime() + 60 * 1000);
-            if (now.getTime() < oneMinuteAfterFutureTime.getTime()) {
-                console.log("Skipping data until 1 minute after the valid time:", validtime);
-                return;
-            }
+    const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+    // レーダーレイヤーを追加する前に、透明度を0に設定する
+    map.addSource(newRadarLayerId, {
+        type: 'raster',
+        tiles: [tileUrl],
+        tileSize: 256,
+        maxzoom: 10
+    });
 
-            const newRadarLayerId = `jma-radar-${Date.now()}`;
+    map.addLayer({
+        id: newRadarLayerId,
+        type: 'raster',
+        source: newRadarLayerId,
+        paint: {
+            'raster-opacity': 0 // 透明度を0に設定
+        }
+    });
 
-            // レーダーレイヤーを再読み込み
-            map.addSource(newRadarLayerId, {
-                type: 'raster',
-                tiles: [tileUrl],
-                tileSize: 256,
-                maxzoom: 10
-            });
+    // フェードイン効果
+    map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
+        duration: 500 // 0.5秒かけてフェードイン
+    });
 
-            map.addLayer({
-                id: newRadarLayerId,
-                type: 'raster',
-                source: newRadarLayerId
-            });
+    // 古いレイヤーを一定時間後に削除
+    if (currentLayer && map.getLayer(currentLayer.radar)) {
+        setTimeout(() => {
+            map.removeLayer(currentLayer.radar);
+            map.removeSource(currentLayer.radar);
+        }, 500); // 新しいレイヤーが完全にフェードインした後に削除
+    }
+
+    // 現在のレイヤーを更新
+    currentLayer.radar = newRadarLayerId;
+}
+
 
             if (!currentLayer) {
                 const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
