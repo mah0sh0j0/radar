@@ -58,6 +58,34 @@
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
             const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
+            // レイヤーを削除する前に新しいレイヤーを追加する
+            map.addSource('jma-radar-new', {
+                type: 'raster',
+                tiles: [tileUrl],
+                tileSize: 256,
+                maxzoom: 10
+            });
+
+            map.addLayer({
+                id: 'jma-radar-layer-new',
+                type: 'raster',
+                source: 'jma-radar-new'
+            });
+
+            map.addSource('jma-mask-new', {
+                type: 'raster',
+                tiles: [maskUrl],
+                tileSize: 256,
+                maxzoom: 10
+            });
+
+            map.addLayer({
+                id: 'jma-mask-layer-new',
+                type: 'raster',
+                source: 'jma-mask-new'
+            });
+
+            // 既存のレイヤーを削除
             if (map.getLayer('jma-radar-layer')) {
                 map.removeLayer('jma-radar-layer');
             }
@@ -71,51 +99,52 @@
                 map.removeSource('jma-mask');
             }
 
-            map.addSource('jma-radar', {
-                type: 'raster',
-                tiles: [tileUrl],
-                tileSize: 256,
-                maxzoom: 10
-            });
+            // 新しいレイヤーを古いレイヤーに置き換える
+            map.setLayerZoomRange('jma-radar-layer-new', 0, 10);
+            map.setLayerZoomRange('jma-mask-layer-new', 0, 10);
 
-            map.addLayer({
-                id: 'jma-radar-layer',
-                type: 'raster',
-                source: 'jma-radar'
-            });
+            map.moveLayer('jma-radar-layer-new', 'usgs-layer');
+            map.moveLayer('jma-mask-layer-new', 'usgs-layer');
 
-            map.addSource('jma-mask', {
-                type: 'raster',
-                tiles: [maskUrl],
-                tileSize: 256,
-                maxzoom: 10
-            });
+            map.setPaintProperty('jma-radar-layer-new', 'raster-opacity', 1);
+            map.setPaintProperty('jma-mask-layer-new', 'raster-opacity', 1);
 
-            map.addLayer({
-                id: 'jma-mask-layer',
-                type: 'raster',
-                source: 'jma-mask'
-            });
+            map.setPaintProperty('jma-radar-layer', 'raster-opacity', 0);
+            map.setPaintProperty('jma-mask-layer', 'raster-opacity', 0);
 
-            document.getElementById('time-display').innerText = `レーダー画像時刻: ${validtime}`;
+            map.removeLayer('jma-radar-layer');
+            map.removeLayer('jma-mask-layer');
+
+            map.renameLayer('jma-radar-layer-new', 'jma-radar-layer');
+            map.renameLayer('jma-mask-layer-new', 'jma-mask-layer');
+
+            map.renameSource('jma-radar-new', 'jma-radar');
+            map.renameSource('jma-mask-new', 'jma-mask');
+
+            // JSTに変換して表示
+            const validDateUTC = new Date(validtime.slice(0, 4), validtime.slice(4, 6) - 1, validtime.slice(6, 8), validtime.slice(8, 10), validtime.slice(10, 12), validtime.slice(12, 14));
+            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+            const formattedDateJST = validDateJST.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+
+            document.getElementById('time-display').innerText = `レーダー画像時刻: ${formattedDateJST}`;
             updateNavButtons();
         }
 
         function updateNavButtons() {
-            document.getElementById('prev-button').disabled = currentIndex === 0;
-            document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1;
+            document.getElementById('prev-button').disabled = currentIndex === validtimes.length - 1;
+            document.getElementById('next-button').disabled = currentIndex === 0;
         }
 
         document.getElementById('prev-button').onclick = () => {
-            if (currentIndex > 0) {
-                currentIndex--;
+            if (currentIndex < validtimes.length - 1) {
+                currentIndex++;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
         };
 
         document.getElementById('next-button').onclick = () => {
-            if (currentIndex < validtimes.length - 1) {
-                currentIndex++;
+            if (currentIndex > 0) {
+                currentIndex--;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
         };
