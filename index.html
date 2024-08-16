@@ -123,89 +123,97 @@
         let slider = document.getElementById('slider');
         let visibility = true;
 
-        function updateRadarLayer(basetime, validtime) {
-            if (!map) return;
+function updateRadarLayer(basetime, validtime) {
+    if (!map) return;
 
-            const now = new Date();
-            const futureTime = new Date(
-                parseInt(validtime.slice(0, 4)),
-                parseInt(validtime.slice(4, 6)) - 1,
-                parseInt(validtime.slice(6, 8)),
-                parseInt(validtime.slice(8, 10)),
-                parseInt(validtime.slice(10, 12))
-            );
+    const now = new Date();
+    const futureTime = new Date(
+        parseInt(validtime.slice(0, 4)),
+        parseInt(validtime.slice(4, 6)) - 1,
+        parseInt(validtime.slice(6, 8)),
+        parseInt(validtime.slice(8, 10)),
+        parseInt(validtime.slice(10, 12))
+    );
 
-            // 45秒未満の時はまだ画像を表示しない
-            if (futureTime > now || (now.getMinutes() === futureTime.getMinutes() && now.getSeconds() < 45)) {
-                console.log("Skipping future time:", validtime);
-                return;
-            }
+    // 45秒未満の時はまだ画像を表示しない
+    if (futureTime > now || (now.getMinutes() === futureTime.getMinutes() && now.getSeconds() < 45)) {
+        console.log("Skipping future time:", validtime);
+        return;
+    }
 
-            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
-            const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
+    // 更新時刻から1分以内の未来の時刻は読み込まない
+    const oneMinuteLater = new Date(now.getTime() + 60 * 1000);
+    if (futureTime > oneMinuteLater) {
+        console.log("Skipping time within 1 minute after update:", validtime);
+        return;
+    }
 
-            const newRadarLayerId = `jma-radar-${Date.now()}`;
-            const newMaskLayerId = `jma-mask-${Date.now()}`;
+    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+    const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
-            map.addSource(newRadarLayerId, {
-                type: 'raster',
-                tiles: [tileUrl],
-                tileSize: 256,
-                maxzoom: 10
-            });
+    const newRadarLayerId = `jma-radar-${Date.now()}`;
+    const newMaskLayerId = `jma-mask-${Date.now()}`;
 
-            map.addLayer({
-                id: newRadarLayerId,
-                type: 'raster',
-                source: newRadarLayerId
-            });
+    map.addSource(newRadarLayerId, {
+        type: 'raster',
+        tiles: [tileUrl],
+        tileSize: 256,
+        maxzoom: 10
+    });
 
-            map.addSource(newMaskLayerId, {
-                type: 'raster',
-                tiles: [maskUrl],
-                tileSize: 256,
-                maxzoom: 10
-            });
+    map.addLayer({
+        id: newRadarLayerId,
+        type: 'raster',
+        source: newRadarLayerId
+    });
 
-            map.addLayer({
-                id: newMaskLayerId,
-                type: 'raster',
-                source: newMaskLayerId
-            });
+    map.addSource(newMaskLayerId, {
+        type: 'raster',
+        tiles: [maskUrl],
+        tileSize: 256,
+        maxzoom: 10
+    });
 
-            if (currentLayer) {
-                if (map.getLayer(currentLayer.radar)) {
-                    map.removeLayer(currentLayer.radar);
-                }
-                if (map.getSource(currentLayer.radar)) {
-                    map.removeSource(currentLayer.radar);
-                }
+    map.addLayer({
+        id: newMaskLayerId,
+        type: 'raster',
+        source: newMaskLayerId
+    });
 
-                if (map.getLayer(currentLayer.mask)) {
-                    map.removeLayer(currentLayer.mask);
-                }
-                if (map.getSource(currentLayer.mask)) {
-                    map.removeSource(currentLayer.mask);
-                }
-            }
-
-            currentLayer = {
-                radar: newRadarLayerId,
-                mask: newMaskLayerId
-            };
-
-            const validDateUTC = new Date(
-                parseInt(validtime.slice(0, 4)),
-                parseInt(validtime.slice(4, 6)) - 1,
-                parseInt(validtime.slice(6, 8)),
-                parseInt(validtime.slice(8, 10)),
-                parseInt(validtime.slice(10, 12))
-            );
-            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-            const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
-
-            document.getElementById('time-display').innerText = formattedDate;
+    if (currentLayer) {
+        if (map.getLayer(currentLayer.radar)) {
+            map.removeLayer(currentLayer.radar);
         }
+        if (map.getSource(currentLayer.radar)) {
+            map.removeSource(currentLayer.radar);
+        }
+
+        if (map.getLayer(currentLayer.mask)) {
+            map.removeLayer(currentLayer.mask);
+        }
+        if (map.getSource(currentLayer.mask)) {
+            map.removeSource(currentLayer.mask);
+        }
+    }
+
+    currentLayer = {
+        radar: newRadarLayerId,
+        mask: newMaskLayerId
+    };
+
+    const validDateUTC = new Date(
+        parseInt(validtime.slice(0, 4)),
+        parseInt(validtime.slice(4, 6)) - 1,
+        parseInt(validtime.slice(6, 8)),
+        parseInt(validtime.slice(8, 10)),
+        parseInt(validtime.slice(10, 12))
+    );
+    const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
+
+    document.getElementById('time-display').innerText = formattedDate;
+}
+
 
         function updateNavButtons() {
             document.getElementById('prev-button').disabled = currentIndex === 0;
