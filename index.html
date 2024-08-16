@@ -181,7 +181,6 @@
         };
 
         function calculatePastTime(basetime, validtime, offset) {
-            // 5分ごとの時刻計算を60進法に対応させる
             const date = new Date(
                 parseInt(basetime.slice(0, 4)),
                 parseInt(basetime.slice(4, 6)) - 1,
@@ -204,7 +203,6 @@
         }
 
         function calculateFutureTime(basetime, offset) {
-            // 5分ごとの時刻計算を60進法に対応させる
             const date = new Date(
                 parseInt(basetime.slice(0, 4)),
                 parseInt(basetime.slice(4, 6)) - 1,
@@ -241,7 +239,6 @@
                 currentIndex = validtimes.length - 1; // 最新のデータを表示する
                 pastOffset = 0;
 
-                // ここで map を初期化
                 map = new maplibregl.Map({
                     container: 'map',
                     style: {
@@ -255,7 +252,7 @@
                                 tileSize: 256,
                                 maxzoom: 19
                             }
-                        ],
+                        },
                         layers: [
                             {
                                 id: 'usgs-layer',
@@ -270,18 +267,15 @@
                     zoom: 6
                 });
 
-                // map の初期化が完了した後に 'load' イベントを設定
                 map.on('load', function () {
                     updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
 
-                    // マップの移動時に中心の緯度経度を更新
                     map.on('move', function () {
                         const center = map.getCenter();
                         document.getElementById('centerLatLngDisplay').innerText = 
                             `北緯: ${center.lat.toFixed(5)}\n東経: ${center.lng.toFixed(5)}`;
                     });
 
-                    // 初回表示
                     const initialCenter = map.getCenter();
                     document.getElementById('centerLatLngDisplay').innerText = 
                         `北緯: ${initialCenter.lat.toFixed(5)}\n東経: ${initialCenter.lng.toFixed(5)}`;
