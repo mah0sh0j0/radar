@@ -50,14 +50,15 @@
                 console.log("Fetched Data: ", data);  // JSONデータを確認
 
                 const basetime = data[0].basetime;
-                const validtimeObject = data[0].validtime; // validtimeの配列を取得
-                const validtime = validtimeObject[0];  // 配列から最初のvalidtimeを取得
+                const validtimeObject = data[0].validtime; // validtime配列を取得
+
+                // 配列内の最初のオブジェクトからvalidtimeを取得
+                const firstValidtime = validtimeObject[0];
 
                 console.log("basetime: ", basetime);  // basetimeの確認
-                console.log("validtimeObject: ", validtimeObject);  // validtimeObjectの確認
-                console.log("validtime: ", validtime);  // validtimeの確認
+                console.log("firstValidtime: ", firstValidtime);  // firstValidtimeの確認
 
-                const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+                const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${firstValidtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
                 console.log("Generated Tile URL: ", tileUrl);  // 生成されたURLを確認
 
