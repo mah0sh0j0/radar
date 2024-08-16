@@ -153,7 +153,6 @@
         }
 
         function updateNavButtons() {
-            // 未来のデータも存在するため、どちらのボタンも最初はグレーアウトしない
             document.getElementById('prev-button').disabled = currentIndex === 0 && pastOffset === 0;
             document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1 && pastOffset === 0;
         }
@@ -240,6 +239,7 @@
                 }
 
                 currentIndex = validtimes.length - 1; // 最新のデータを表示する
+                pastOffset = 0;
 
                 // ここで map を初期化
                 map = new maplibregl.Map({
@@ -255,7 +255,7 @@
                                 tileSize: 256,
                                 maxzoom: 19
                             }
-                        },
+                        ],
                         layers: [
                             {
                                 id: 'usgs-layer',
