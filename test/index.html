@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>レーダー</title>
     <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
-    <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- FontAwesomeのリンク -->
     <style>
         body, html { 
             margin: 0; 
@@ -59,6 +59,7 @@
             border-radius: 20px;
             margin: 0 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            font-size: 20px; /* ボタンのサイズを統一 */
         }
         .nav-button:disabled {
             background-color: #d3d3d3;
@@ -119,7 +120,7 @@
     <div id="nav-bar">
         <div id="time-display">Loading...</div>
         <div id="nav-buttons">
-            <button id="play-button" class="nav-button">▶︎</button> <!-- 自動再生ボタン -->
+            <button id="play-button" class="nav-button"><i class="fas fa-play"></i></button> <!-- FontAwesomeのアイコンに変更 -->
             <button id="prev-button" class="nav-button">&lt;</button>
             <input type="range" id="slider" min="0" max="36" step="1" value="36">
             <button id="next-button" class="nav-button">&gt;</button>
@@ -142,64 +143,61 @@
         let isPlaying = false; // 自動再生の状態
         let playInterval = null; // 自動再生のインターバル
 
-function updateRadarLayer(basetime, validtime) {
-    if (!map) return;
+        function updateRadarLayer(basetime, validtime) {
+            if (!map) return;
 
-    const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+            const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
-    const newRadarLayerId = `jma-radar-${Date.now()}`;
+            const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-    // 新しいレイヤーを追加するが、初期状態では非表示
-    map.addSource(newRadarLayerId, {
-        type: 'raster',
-        tiles: [tileUrl],
-        tileSize: 256,
-        maxzoom: 10
-    });
+            // 新しいレイヤーを追加するが、初期状態では非表示
+            map.addSource(newRadarLayerId, {
+                type: 'raster',
+                tiles: [tileUrl],
+                tileSize: 256,
+                maxzoom: 10
+            });
 
-    map.addLayer({
-        id: newRadarLayerId,
-        type: 'raster',
-        source: newRadarLayerId,
-        paint: {
-            'raster-opacity': 0 // 初期の透明度を0に設定
+            map.addLayer({
+                id: newRadarLayerId,
+                type: 'raster',
+                source: newRadarLayerId,
+                paint: {
+                    'raster-opacity': 0 // 初期の透明度を0に設定
+                }
+            });
+
+            // 新しいレイヤーが完全にロードされたら古いレイヤーを削除し、新しいレイヤーを表示
+            map.once('idle', () => {
+                // 古いレイヤーを削除
+                currentLayers.forEach(layerId => {
+                    if (map.getLayer(layerId)) {
+                        map.removeLayer(layerId);
+                    }
+                    if (map.getSource(layerId)) {
+                        map.removeSource(layerId);
+                    }
+                });
+
+                // 新しいレイヤーの透明度を即座に100%に設定
+                map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1);
+
+                // 現在のレイヤーを更新
+                currentLayers = [newRadarLayerId];
+            });
+
+            const validDateUTC = new Date(
+                parseInt(validtime.slice(0, 4)),
+                parseInt(validtime.slice(4, 6)) - 1,
+                parseInt(validtime.slice(6, 8)),
+                parseInt(validtime.slice(8, 10)),
+                parseInt(validtime.slice(10, 12))
+            );
+            const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
+            const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
+
+            document.getElementById('time-display').innerText = formattedDate;
         }
-    });
-
-    // 新しいレイヤーが完全にロードされたら古いレイヤーを削除し、新しいレイヤーを表示
-    map.once('idle', () => {
-        // 古いレイヤーを削除
-        currentLayers.forEach(layerId => {
-            if (map.getLayer(layerId)) {
-                map.removeLayer(layerId);
-            }
-            if (map.getSource(layerId)) {
-                map.removeSource(layerId);
-            }
-        });
-
-        // 新しいレイヤーの透明度を即座に100%に設定
-        map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1);
-
-        // 現在のレイヤーを更新
-        currentLayers = [newRadarLayerId];
-    });
-
-    const validDateUTC = new Date(
-        parseInt(validtime.slice(0, 4)),
-        parseInt(validtime.slice(4, 6)) - 1,
-        parseInt(validtime.slice(6, 8)),
-        parseInt(validtime.slice(8, 10)),
-        parseInt(validtime.slice(10, 12))
-    );
-    const validDateJST = new Date(validDateUTC.getTime() + 9 * 60 * 60 * 1000);
-    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
-
-    document.getElementById('time-display').innerText = formattedDate;
-}
-
-
-
 
         function updateNavButtons() {
             document.getElementById('prev-button').disabled = currentIndex === 0;
@@ -246,10 +244,10 @@ function updateRadarLayer(basetime, validtime) {
             if (isPlaying) {
                 clearInterval(playInterval);
                 isPlaying = false;
-                document.getElementById('play-button').innerText = '▶︎';
+                document.getElementById('play-button').innerHTML = '<i class="fas fa-play"></i>'; // 再生アイコン
             } else {
                 isPlaying = true;
-                document.getElementById('play-button').innerText = '■';
+                document.getElementById('play-button').innerHTML = '<i class="fas fa-stop"></i>'; // 停止アイコン
                 currentIndex = maxOffset; // 再生開始時に最新の画像を表示する
                 slider.value = currentIndex;
                 updateSlider();
