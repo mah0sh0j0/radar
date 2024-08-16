@@ -156,16 +156,16 @@
             document.getElementById('next-button').disabled = currentIndex === validtimes.length - 1;
         }
 
-        document.getElementById('next-button').onclick = () => {
-            if (currentIndex < validtimes.length - 1) {
-                currentIndex++;
+        document.getElementById('prev-button').onclick = () => {
+            if (currentIndex > 0) {
+                currentIndex--;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
         };
 
-        document.getElementById('prev-button').onclick = () => {
-            if (currentIndex > 0) {
-                currentIndex--;
+        document.getElementById('next-button').onclick = () => {
+            if (currentIndex < validtimes.length - 1) {
+                currentIndex++;
                 updateRadarLayer(validtimes[currentIndex].basetime, validtimes[currentIndex].validtime);
             }
         };
@@ -183,7 +183,7 @@
                     return;
                 }
 
-                currentIndex = validtimes.length - 1;
+                currentIndex = 0; // 初期化時に一番新しいデータを表示
 
                 // ここで map を初期化
                 map = new maplibregl.Map({
