@@ -97,6 +97,8 @@
         let slider = document.getElementById('slider');
 
         function updateRadarLayer(basetime, validtime) {
+            if (!map) return; // mapがまだ初期化されていない場合は何もしない
+
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
             const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
@@ -232,10 +234,6 @@
                     return;
                 }
 
-                currentIndex = maxOffset; // 最新のデータを表示する
-                updateSlider();
-                updateNavButtons();
-
                 map = new maplibregl.Map({
                     container: 'map',
                     style: {
@@ -265,7 +263,9 @@
                 });
 
                 map.on('load', function () {
-                    updateRadarLayer(validtimes[validtimes.length - 1].basetime, validtimes[validtimes.length - 1].validtime);
+                    currentIndex = maxOffset; // 最新のデータを表示する
+                    updateSlider();
+                    updateNavButtons();
 
                     map.on('move', function () {
                         const center = map.getCenter();
