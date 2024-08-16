@@ -21,8 +21,7 @@
         #time-display {
             margin-bottom: 5px;
         }
-        .time-button {
-            display: block;
+        .time-dropdown {
             margin-top: 5px;
         }
     </style>
@@ -30,7 +29,7 @@
 <body>
     <div id="controls">
         <div id="time-display">Loading...</div>
-        <div id="time-buttons"></div>
+        <select id="time-dropdown" class="time-dropdown"></select>
     </div>
     <div id="map"></div>
     <script>
@@ -39,10 +38,13 @@
 
         function updateRadarLayer(basetime, validtime) {
             const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
+            const maskUrl = `https://www.jma.go.jp/bosai/jmatile/data/map/none/none/none/surf/mask/{z}/{x}/{y}.png`;
 
             if (currentLayer) {
                 map.removeLayer('jma-radar-layer');
                 map.removeSource('jma-radar');
+                map.removeLayer('jma-mask-layer');
+                map.removeSource('jma-mask');
             }
 
             map.addSource('jma-radar', {
@@ -56,6 +58,19 @@
                 id: 'jma-radar-layer',
                 type: 'raster',
                 source: 'jma-radar'
+            });
+
+            map.addSource('jma-mask', {
+                type: 'raster',
+                tiles: [maskUrl],
+                tileSize: 256,
+                maxzoom: 10
+            });
+
+            map.addLayer({
+                id: 'jma-mask-layer',
+                type: 'raster',
+                source: 'jma-mask'
             });
 
             document.getElementById('time-display').innerText = `レーダー画像時刻: ${validtime}`;
@@ -101,15 +116,19 @@
                     updateRadarLayer(basetime, validtimes[0]);
                 });
 
-                // ボタンを作成して時間ごとに切り替え
-                const timeButtonsContainer = document.getElementById('time-buttons');
-                validtimes.forEach((validtime, index) => {
-                    const button = document.createElement('button');
-                    button.innerText = validtime;
-                    button.className = 'time-button';
-                    button.onclick = () => updateRadarLayer(basetime, validtime);
-                    timeButtonsContainer.appendChild(button);
+                // プルダウンメニューを作成して時間ごとに切り替え
+                const timeDropdown = document.getElementById('time-dropdown');
+                validtimes.forEach(validtime => {
+                    const option = document.createElement('option');
+                    option.value = validtime;
+                    option.innerText = validtime;
+                    timeDropdown.appendChild(option);
                 });
+
+                timeDropdown.onchange = () => {
+                    const selectedTime = timeDropdown.value;
+                    updateRadarLayer(basetime, selectedTime);
+                };
             })
             .catch(error => console.error('Error loading JSON:', error));
     </script>
