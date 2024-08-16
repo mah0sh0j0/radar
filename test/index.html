@@ -239,7 +239,7 @@ function updateRadarLayer(basetime, validtime) {
     // 現在時刻を取得
     const now = new Date();
 
-    // 5分単位で最も近い過去の時刻を計算
+    // 5分単位で最も近い過去のUTC時刻を計算
     const roundedMinutes = Math.floor(now.getUTCMinutes() / 5) * 5;
     const roundedTime = new Date(Date.UTC(
         now.getUTCFullYear(),
@@ -249,12 +249,11 @@ function updateRadarLayer(basetime, validtime) {
         roundedMinutes
     ));
 
-    // 有効時刻を更新
+    // validtimeを新たに設定
     validtime = `${roundedTime.getUTCFullYear()}${(roundedTime.getUTCMonth() + 1).toString().padStart(2, '0')}${roundedTime.getUTCDate().toString().padStart(2, '0')}${roundedTime.getUTCHours().toString().padStart(2, '0')}${roundedTime.getUTCMinutes().toString().padStart(2, '0')}`;
 
-    // 現在時刻が有効時刻を1分以上経過していない場合はデータを表示しない
+    // 現在時刻が有効時刻の1分以上後でなければ表示しない
     if (now.getTime() < roundedTime.getTime() + 60000) {
-        // 未来のデータを表示しない
         return;
     }
 
@@ -262,7 +261,7 @@ function updateRadarLayer(basetime, validtime) {
 
     const newRadarLayerId = `jma-radar-${Date.now()}`;
 
-    // 新しいレイヤーを追加するが、初期状態では非表示
+    // 新しいレイヤーを追加する
     map.addSource(newRadarLayerId, {
         type: 'raster',
         tiles: [tileUrl],
@@ -275,16 +274,15 @@ function updateRadarLayer(basetime, validtime) {
         type: 'raster',
         source: newRadarLayerId,
         paint: {
-            'raster-opacity': 0 // 初期の透明度を0に設定
+            'raster-opacity': 0
         }
-    }, 'jma-mask-layer'); // レイヤーの順序を指定：'jma-mask-layer'の下に追加
+    }, 'jma-mask-layer'); // 'jma-mask-layer'の下に追加
 
     // レイヤーのロードが完了したらフェードイン
     map.once('idle', () => {
-        // 古いレイヤーを少し遅らせてフェードアウト
         currentLayers.forEach(layerId => {
             map.setPaintProperty(layerId, 'raster-opacity', 0, {
-                duration: 500 // 0.5秒かけてフェードアウト
+                duration: 500
             });
             setTimeout(() => {
                 if (map.getLayer(layerId)) {
@@ -293,31 +291,20 @@ function updateRadarLayer(basetime, validtime) {
                 if (map.getSource(layerId)) {
                     map.removeSource(layerId);
                 }
-            }, 500); // フェードアウトが完了した後に削除
+            }, 500);
         });
 
-        // 新しいレイヤーをフェードイン
         map.setPaintProperty(newRadarLayerId, 'raster-opacity', 1, {
-            duration: 500 // 0.5秒かけてフェードイン
+            duration: 500
         });
 
-        // 現在のレイヤーを更新
         currentLayers = [newRadarLayerId];
     });
 
-    const validDateJST = new Date(roundedTime.getTime() + 9 * 60 * 60 * 1000);
-    const formattedDate = `${validDateJST.getFullYear()}年${(validDateJST.getMonth() + 1).toString().padStart(2, '0')}月${validDateJST.getDate().toString().padStart(2, '0')}日${validDateJST.getHours().toString().padStart(2, '0')}時${validDateJST.getMinutes().toString().padStart(2, '0')}分`;
+    const formattedDate = `${roundedTime.getUTCFullYear()}年${(roundedTime.getUTCMonth() + 1).toString().padStart(2, '0')}月${roundedTime.getUTCDate().toString().padStart(2, '0')}日${roundedTime.getUTCHours().toString().padStart(2, '0')}時${roundedTime.getUTCMinutes().toString().padStart(2, '0')}分`;
 
     document.getElementById('time-display').innerText = formattedDate;
 }
-
-
-
-
-
-
-
-
 
         function updateNavButtons() {
             document.getElementById('prev-button').disabled = currentIndex === 0;
