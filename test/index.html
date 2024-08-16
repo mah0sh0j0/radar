@@ -246,11 +246,11 @@ function updateRadarLayer(basetime, validtime) {
         0
     );
 
-    // 常に5分前のデータを使用
+    // 常に5分前のデータを表示（タイルURLはそのまま）
     validDateUTC.setMinutes(validDateUTC.getMinutes() - 5);
     validtime = `${validDateUTC.getUTCFullYear()}${(validDateUTC.getUTCMonth() + 1).toString().padStart(2, '0')}${validDateUTC.getUTCDate().toString().padStart(2, '0')}${validDateUTC.getUTCHours().toString().padStart(2, '0')}${validDateUTC.getUTCMinutes().toString().padStart(2, '0')}00`;
 
-    // タイルURLを生成
+    // タイルURLは変更しない
     const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
     const newRadarLayerId = `jma-radar-${Date.now()}`;
@@ -301,7 +301,6 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
-
 
 
 
