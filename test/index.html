@@ -161,7 +161,7 @@ function updateRadarLayer(basetime, validtime) {
 
     // 現在時刻を取得
     const now = new Date();
-    
+
     // validtimeをUTCとして解析
     const validDateUTC = new Date(
         parseInt(validtime.slice(0, 4)),
@@ -174,6 +174,11 @@ function updateRadarLayer(basetime, validtime) {
     // 現在時刻よりも1分以上未来のデータは表示しない
     if (validDateUTC.getTime() > now.getTime() + 60000) {
         return; // 1分以上未来のデータは表示しない
+    }
+
+    // 現在時刻が有効時刻から1分未満の場合も表示しない
+    if (now.getTime() < validDateUTC.getTime() + 60000) {
+        return;
     }
 
     const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
@@ -228,6 +233,7 @@ function updateRadarLayer(basetime, validtime) {
 
     document.getElementById('time-display').innerText = formattedDate;
 }
+
 
 
 
