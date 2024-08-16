@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>レーダー1356</title>
+    <title>レーダー1358</title>
     <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
     <style>
@@ -48,7 +48,7 @@
             .then(response => response.json())
             .then(data => {
                 const basetime = data[0].basetime;
-                const validtime = data[0].validtime[0]; // 配列の0番目のvalidtimeを取得
+                const validtime = data[0].validtime[0].validtime || data[0].validtime[0]; // 正しいvalidtimeの取得
                 const tileUrl = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${basetime}/none/${validtime}/surf/hrpns/{z}/{x}/{y}.png`;
 
                 console.log("Generated Tile URL: ", tileUrl);  // 生成されたURLを確認
